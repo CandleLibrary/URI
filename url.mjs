@@ -257,6 +257,7 @@ export class URL {
 
         let lex = whind(this.query);
 
+
         const get_map = (k, m) => (m.has(k)) ? m.get(k) : m.set(k, new Map).get(k);
 
         let key = 0,
@@ -268,19 +269,19 @@ export class URL {
             switch (lex.tx) {
                 case "&": //At new class or value
                     if (lfv > 0)
-                        key = (class_map.set(key_val, lex.s(lfv)), lfv = 0, lex.n().pos);
+                        key = (class_map.set(key_val, lex.s(lfv)), lfv = 0, lex.n.pos);
                     else {
                         key_val = lex.s(key);
-                        key = (class_map = get_map(key_val, map), lex.n().pos);
+                        key = (class_map = get_map(key_val, map), lex.n.pos);
                     }
                     continue;
                 case "=":
                     //looking for a value now
                     key_val = lex.s(key);
-                    lfv = lex.n().pos;
+                    lfv = lex.n.pos;
                     continue;
             }
-            lex.n();
+            lex.n;
         }
 
         if (lfv > 0) class_map.set(key_val, lex.s(lfv));

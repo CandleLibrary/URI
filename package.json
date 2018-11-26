@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/url",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/galactrax/cfw_url.git"
+    "url": "git+https://github.com/galactrax/cfw-url.git"
   },
   "keywords": [
     "URL",
@@ -18,11 +18,11 @@
   "author": "Anthony Weathersby",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/galactrax/cfw_url/issues"
+    "url": "https://github.com/galactrax/cfw-url/issues"
   },
-  "homepage": "https://github.com/galactrax/cfw_url#readme",
+  "homepage": "https://github.com/galactrax/cfw-url#readme",
   "dependencies": {
-    "@candlefw/whind": ">=0.0.1"
+    "@candlefw/whind": "^0.2.3"
   },
   "devDependencies": {
     "chai": "^4.2.0",
