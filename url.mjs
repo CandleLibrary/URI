@@ -12,6 +12,34 @@ const STOCK_LOCATION = {
     search:""
 }
 
+/** Implement Basic Fetch Mechanism for NodeJS **/
+if(typeof(fetch) == "undefined" && typeof(global) !== "undefined" ){
+
+    
+    import("fs").then(fs=>{
+
+
+     global.fetch = (url, data) =>
+        new Promise((res, rej) => {
+            let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+            fs.readFile(p, "utf8", (err, data) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    res({
+                        status: 200,
+                        text: () => {
+                            return {
+                                then: (f) => f(data)
+                            }
+                        }
+                    });
+                }
+            })
+        });
+    });
+}
+
 function fetchLocalText(URL, m = "same-origin") {
     return new Promise((res, rej) => {
         fetch(URL, {

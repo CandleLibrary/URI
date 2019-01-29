@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/url",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
   "scripts": {
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/galactrax/cfw-url#readme",
   "dependencies": {
-    "@candlefw/whind": "^0.2.3"
+    "@candlefw/whind": "*"
   },
   "devDependencies": {
     "chai": "^4.2.0",
