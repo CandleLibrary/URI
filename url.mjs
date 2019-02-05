@@ -343,7 +343,7 @@ export class URL {
             str.push(`${this.path[0] == "/" ? "" : "/"}${this.path}`);
 
         if (this.query)
-            str.push(this.query);
+            str.push("?",this.query);
 
         return str.join("");
     }
