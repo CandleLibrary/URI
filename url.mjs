@@ -3,41 +3,38 @@ import whind from "@candlefw/whind";
 const uri_reg_ex = /(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:\/\/))?(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:([^\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
 const STOCK_LOCATION = {
-    protocol :"",
-    host :"",
-    port :"",
-    path :"",
-    hash :"",
-    query :"",
-    search:""
+    protocol: "",
+    host: "",
+    port: "",
+    path: "",
+    hash: "",
+    query: "",
+    search: ""
 }
 
 /** Implement Basic Fetch Mechanism for NodeJS **/
-if(typeof(fetch) == "undefined" && typeof(global) !== "undefined" ){
-
-    
-    import("fs").then(fs=>{
-
-
-     global.fetch = (url, data) =>
-        new Promise((res, rej) => {
-            let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            fs.readFile(p, "utf8", (err, data) => {
-                if (err) {
-                    rej(err);
-                } else {
-                    res({
+if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
+    (async () => {
+        const fs = (await import("fs")).default.promises;
+        const path = (await import("path")).default;
+        global.fetch = (url, data) =>
+            new Promise(async (res, rej) => {
+                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                try {
+                    let data = await fs.readFile(p, "utf8")
+                    return res({
                         status: 200,
                         text: () => {
                             return {
                                 then: (f) => f(data)
                             }
                         }
-                    });
+                    })
+                } catch (err) {
+                    return rej(err);
                 }
-            })
-        });
-    });
+            });
+    })()
 }
 
 function fetchLocalText(URL, m = "same-origin") {
@@ -129,7 +126,7 @@ function submitJSON(URL, json_data, m = "same-origin") {
 export class URL {
 
     static resolveRelative(URL_or_url_original, URL_or_url_new) {
-        
+
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
 
@@ -160,13 +157,20 @@ export class URL {
 
     constructor(url = "", USE_LOCATION = false) {
 
-        let IS_STRING = true;
-        
+        let IS_STRING = true,
+            IS_LOCATION = false;
 
-        const location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
 
+        let location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
+
+        if (url instanceof Location) {
+            location = url;
+            url = "";
+            IS_LOCATION = true;
+        }
         if (!url || typeof(url) != "string") {
             IS_STRING = false;
+            IS_LOCATION = true;
             if (URL.GLOBAL && USE_LOCATION)
                 return URL.GLOBAL;
         }
@@ -236,11 +240,10 @@ export class URL {
                 this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
                 this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
                 this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
-            }
-        } else if (USE_LOCATION) {
 
-            URL.G = this;
-            this.protocol = location.protocol;
+            }
+        } else if (IS_LOCATION) {
+            this.protocol = location.protocol.replace(/\:/g,"");
             this.host = location.hostname;
             this.port = location.port;
             this.path = location.pathname;
@@ -248,7 +251,10 @@ export class URL {
             this.query = location.search.slice(1);
             this._getQuery_(this.query);
 
-            return URL.R;
+            if (USE_LOCATION) {
+                URL.G = this;
+                return URL.R;
+            }
         }
         this._getQuery_(this.query);
     }
@@ -330,11 +336,13 @@ export class URL {
     toString() {
         let str = [];
 
-        if (this.protocol && this.host)
-            str.push(`${this.protocol}://`);
+        if (this.host) {
 
-        if (this.host)
+            if (this.protocol)
+                str.push(`${this.protocol}://`);
+
             str.push(`${this.host}`);
+        }
 
         if (this.port)
             str.push(`:${this.port}`);
@@ -343,7 +351,11 @@ export class URL {
             str.push(`${this.path[0] == "/" ? "" : "/"}${this.path}`);
 
         if (this.query)
-            str.push("?",this.query);
+            str.push(((this.query[0] == "?" ? "" : "?") + this.query));
+
+        if (this.hash)
+            str.push("#"+this.hash);
+
 
         return str.join("");
     }
@@ -486,11 +498,11 @@ export class URL {
     }
 
     submitJSON(json_data) {
-            return submitJSON(this.toString(), json_data);
-        }
-        /**
-         * Goes to the current URL.
-         */
+        return submitJSON(this.toString(), json_data);
+    }
+    /**
+     * Goes to the current URL.
+     */
     goto() {
         return;
         let url = this.toString();
