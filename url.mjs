@@ -44,6 +44,7 @@ function fetchLocalText(URL, m = "same-origin") {
             credentials: m,
             method: "Get"
         }).then(r => {
+
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
             else
@@ -125,10 +126,12 @@ function submitJSON(URL, json_data, m = "same-origin") {
  */
 export class URL {
 
-    static resolveRelative(URL_or_url_original, URL_or_url_new) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(),) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
+
+        if(!URL_old || !URL_new) return null;
 
         let new_path = "";
         if (URL_new.path[0] != "/") {
@@ -150,7 +153,6 @@ export class URL {
             }
             URL_new.path = a.join("/");
         }
-
 
         return URL_new;
     }
@@ -232,6 +234,11 @@ export class URL {
                 this.hash = url.hash;
             } else {
                 let part = url.match(uri_reg_ex);
+
+                //If the complete string is not matched than we are dealing with something other 
+                //than a pure URL. Thus, no object is returned. 
+                if(part[0] !== url) return null;
+
                 this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
                 this.user = part[2] || "";
                 this.pwd = part[3] || "";
@@ -517,6 +524,11 @@ export class URL {
 
     get href() {
         return this.toString();
+    }
+
+    get ext(){
+        const m = this.path.match(/\.([^\.]*)$/);
+        return m ? m[1] : "";
     }
 }
 
