@@ -11,38 +11,12 @@ const STOCK_LOCATION = {
     query: "",
     search: ""
 }
-
-/** Implement Basic Fetch Mechanism for NodeJS **/
-if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
-    (async () => {
-        const fs = (await import("fs")).default.promises;
-        const path = (await import("path")).default;
-        global.fetch = (url, data) =>
-            new Promise(async (res, rej) => {
-                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-                try {
-                    let data = await fs.readFile(p, "utf8")
-                    return res({
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(data)
-                            }
-                        }
-                    })
-                } catch (err) {
-                    return rej(err);
-                }
-            });
-    })()
-}
-
 function fetchLocalText(URL, m = "same-origin") {
     return new Promise((res, rej) => {
         fetch(URL, {
             mode: m, // CORs not allowed
             credentials: m,
-            method: "Get"
+            method: "GET"
         }).then(r => {
 
             if (r.status < 200 || r.status > 299)
@@ -58,7 +32,7 @@ function fetchLocalJSON(URL, m = "same-origin") {
         fetch(URL, {
             mode: m, // CORs not allowed
             credentials: m,
-            method: "Get"
+            method: "GET"
         }).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
@@ -126,12 +100,12 @@ function submitJSON(URL, json_data, m = "same-origin") {
  */
 export class URL {
 
-    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(),) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(), ) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
-
-        if(!URL_old || !URL_new) return null;
+        
+        if (!(URL_old + "") || !(URL_new + "")) return null;
 
         let new_path = "";
         if (URL_new.path[0] != "/") {
@@ -165,7 +139,7 @@ export class URL {
 
         let location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
 
-        if (url instanceof Location) {
+        if (typeof(Location) !== "undefined" && url instanceof Location) {
             location = url;
             url = "";
             IS_LOCATION = true;
@@ -237,7 +211,7 @@ export class URL {
 
                 //If the complete string is not matched than we are dealing with something other 
                 //than a pure URL. Thus, no object is returned. 
-                if(part[0] !== url) return null;
+                if (part[0] !== url) return null;
 
                 this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
                 this.user = part[2] || "";
@@ -250,7 +224,7 @@ export class URL {
 
             }
         } else if (IS_LOCATION) {
-            this.protocol = location.protocol.replace(/\:/g,"");
+            this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
             this.port = location.port;
             this.path = location.pathname;
@@ -361,7 +335,7 @@ export class URL {
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
 
         if (this.hash)
-            str.push("#"+this.hash);
+            str.push("#" + this.hash);
 
 
         return str.join("");
@@ -504,8 +478,8 @@ export class URL {
         return submitForm(this.toString(), form_data);
     }
 
-    submitJSON(json_data) {
-        return submitJSON(this.toString(), json_data);
+    submitJSON(json_data, mode) {
+        return submitJSON(this.toString(), json_data, mode);
     }
     /**
      * Goes to the current URL.
@@ -526,7 +500,7 @@ export class URL {
         return this.toString();
     }
 
-    get ext(){
+    get ext() {
         const m = this.path.match(/\.([^\.]*)$/);
         return m ? m[1] : "";
     }
@@ -631,9 +605,83 @@ URL.R = {
         return URL.G.cacheResource(resource);
     }
 };
+
+
+/** Implement Basic Fetch Mechanism for NodeJS **/
+if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
+    (async () => {
+        console.log("Moonshot")
+        
+        global.fetch = (url, data) =>
+            new Promise(async (res, rej) => {
+                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                try {
+                    let data = await fs.readFile(p, "utf8")
+                    return res({
+                        status: 200,
+                        text: () => {
+                            return {
+                                then: (f) => f(data)
+                            }
+                        }
+                    })
+                } catch (err) {
+                    return rej(err);
+                }
+            });
+    })()
+}
+
+
+let SIMDATA = null;
+
+/* Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
+URL.simulate = function(){
+    SIMDATA = new Map;
+    URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "" ;
+    URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {} ;
+}
+
+//Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
+URL.addResource = (n,v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+
+URL.polyfill = function() {    if (typeof(global) !== "undefined") {
+    console.log("AAAAAAAAAAAAAAAAAAAAAA")
+        const fs = (import("fs")).promises;
+        const path = (import("path"));
+
+
+        global.Location =  (class extends URL{});
+        
+        global.document = global.document || {}
+
+        global.document.location = new URL(process.env.PWD);
+        /**
+         * Global `fetch` polyfill - basic support
+         */
+        global.fetch = (url, data) =>
+            new Promise((res, rej) => {
+                let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                fs.readFile(p, "utf8", (err, data) => {
+                    if (err) {
+                        rej(err);
+                    } else {
+                        res({
+                            status: 200,
+                            text: () => {
+                                return {
+                                    then: (f) => f(data)
+                                }
+                            }
+                        });
+                    }
+                })
+            });
+    }
+}
+
 Object.freeze(URL.R);
 Object.freeze(URL.RC);
 Object.seal(URL);
-
 
 export default URL;
