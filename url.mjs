@@ -491,6 +491,16 @@ export class URL {
         window.onpopstate();
         URL.G = this;
     }
+    //Returns the last segment of the path
+    get file(){
+        return this.path.split("/").pop();
+    }
+
+
+    //Returns the all but the last segment of the path
+    get dir(){
+        return this.path.split("/").slice(0,-1).join("/") || "/";
+    }
 
     get pathname() {
         return this.path;
