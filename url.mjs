@@ -11,6 +11,7 @@ const STOCK_LOCATION = {
     query: "",
     search: ""
 }
+
 function fetchLocalText(URL, m = "same-origin") {
     return new Promise((res, rej) => {
         fetch(URL, {
@@ -104,7 +105,7 @@ export class URL {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
-        
+
         if (!(URL_old + "") || !(URL_new + "")) return null;
 
         let new_path = "";
@@ -492,14 +493,14 @@ export class URL {
         URL.G = this;
     }
     //Returns the last segment of the path
-    get file(){
+    get file() {
         return this.path.split("/").pop();
     }
 
 
     //Returns the all but the last segment of the path
-    get dir(){
-        return this.path.split("/").slice(0,-1).join("/") || "/";
+    get dir() {
+        return this.path.split("/").slice(0, -1).join("/") || "/";
     }
 
     get pathname() {
@@ -513,6 +514,10 @@ export class URL {
     get ext() {
         const m = this.path.match(/\.([^\.]*)$/);
         return m ? m[1] : "";
+    }
+
+    get search() {
+        return this.query;
     }
 }
 
@@ -617,76 +622,55 @@ URL.R = {
 };
 
 
-/** Implement Basic Fetch Mechanism for NodeJS **/
-if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
-    (async () => {
-        console.log("Moonshot")
-        
-        global.fetch = (url, data) =>
-            new Promise(async (res, rej) => {
-                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-                try {
-                    let data = await fs.readFile(p, "utf8")
-                    return res({
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(data)
-                            }
-                        }
-                    })
-                } catch (err) {
-                    return rej(err);
-                }
-            });
-    })()
-}
+
 
 
 let SIMDATA = null;
 
 /* Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
-URL.simulate = function(){
+URL.simulate = function() {
     SIMDATA = new Map;
-    URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "" ;
-    URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {} ;
+    URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
+    URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
 }
 
 //Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
-URL.addResource = (n,v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
 
-URL.polyfill = function() {    if (typeof(global) !== "undefined") {
-    console.log("AAAAAAAAAAAAAAAAAAAAAA")
-        const fs = (import("fs")).promises;
-        const path = (import("path"));
+URL.polyfill = async function() {
+    if (typeof(global) !== "undefined") {
+
+        const 
+            fs = (await import("fs")).promises,
+            path = (await import("path"));
 
 
-        global.Location =  (class extends URL{});
-        
+        global.Location = (class extends URL {});
+
         global.document = global.document || {}
 
         global.document.location = new URL(process.env.PWD);
         /**
          * Global `fetch` polyfill - basic support
          */
-        global.fetch = (url, data) =>
-            new Promise((res, rej) => {
-                let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-                fs.readFile(p, "utf8", (err, data) => {
-                    if (err) {
-                        rej(err);
-                    } else {
-                        res({
-                            status: 200,
-                            text: () => {
-                                return {
-                                    then: (f) => f(data)
-                                }
-                            }
-                        });
+        global.fetch = async (url, data) => {
+            let
+                p = path.join(process.cwd(), (url[0] == ".") ? url + "" : "." + url),
+                d = await fs.readFile(p, "utf8");
+
+            try {
+                return {
+                    status: 200,
+                    text: () => {
+                        return {
+                            then: (f) => f(d)
+                        }
                     }
-                })
-            });
+                };
+            } catch (err) {
+                throw err;
+            }
+        }
     }
 }
 
