@@ -496,6 +496,11 @@ export class URL {
     get file() {
         return this.path.split("/").pop();
     }
+    //returns the name of the file less the extension
+    get filename() {
+        return this.file.split(".").shift();
+    }
+
 
 
     //Returns the all but the last segment of the path
