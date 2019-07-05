@@ -643,6 +643,7 @@ URL.simulate = function() {
 URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
 
 URL.polyfill = async function() {
+
     if (typeof(global) !== "undefined") {
 
         const 
@@ -654,7 +655,7 @@ URL.polyfill = async function() {
 
         global.document = global.document || {}
 
-        global.document.location = new URL(process.env.PWD);
+        global.document.location = new URL(process.cwd() + "/");
         /**
          * Global `fetch` polyfill - basic support
          */
