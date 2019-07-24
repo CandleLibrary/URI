@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/url",
-  "version": "0.0.7-a",
+  "version": "0.0.8-0",
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
   "scripts": {
