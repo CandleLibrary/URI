@@ -4,7 +4,9 @@
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
   "scripts": {
-    "test": "node --experimental-modules node_modules/mocha/bin/_mocha test.js -r esm"
+    "test": "node --experimental-modules node_modules/mocha/bin/_mocha test.js -r esm",
+    "build": "rollup --config ./build/config/config.js",
+    "build.watch": "rollup --config  ./build/config/config.js --watch"
   },
   "repository": {
     "type": "git",
@@ -25,6 +27,8 @@
     "@candlefw/whind": "latest"
   },
   "devDependencies": {
+    "rollup":"latets",
+    "@rollup/plugin-node-resolve": "latest",
     "chai": "^4.2.0",
     "esm": "^3.0.84",
     "mocha": "^5.2.0"

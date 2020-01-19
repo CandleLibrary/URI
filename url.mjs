@@ -99,7 +99,7 @@ function submitJSON(URL, json_data, m = "same-origin") {
  * @alias URL
  * @memberof module:wick.core.network
  */
-export class URL {
+class URL {
 
     static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(), ) {
 
