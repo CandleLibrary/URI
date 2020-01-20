@@ -501,8 +501,6 @@ class URL {
         return this.file.split(".").shift();
     }
 
-
-
     //Returns the all but the last segment of the path
     get dir() {
         return this.path.split("/").slice(0, -1).join("/") || "/";
