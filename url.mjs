@@ -101,7 +101,7 @@ function submitJSON(URL, json_data, m = "same-origin") {
  */
 class URL {
 
-    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(), ) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : document.location.toString()) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
