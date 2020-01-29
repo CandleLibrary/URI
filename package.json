@@ -27,10 +27,10 @@
     "@candlefw/whind": "latest"
   },
   "devDependencies": {
-    "rollup":"latets",
     "@rollup/plugin-node-resolve": "latest",
     "chai": "^4.2.0",
     "esm": "^3.0.84",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "rollup": "^1.30.1"
   }
 }
