@@ -2,31 +2,6 @@ import URL from "./url.mjs";
 import path from "path";
 import fs from "fs";
 
-if(true){
-    
-    /**
-     * Global `fetch` polyfill - basic support
-     */
-    global.fetch = (url, data) =>
-        new Promise((res, rej) => {
-            let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            fs.readFile(p, "utf8", (err, data) => {
-                if (err) {
-                    rej(err);
-                } else {
-                    res({
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(data)
-                            }
-                        }
-                    });
-                }
-            })
-        });
-}
-
 const chai = require("chai");
 const assert = chai.assert; 
 
@@ -36,6 +11,10 @@ if (typeof(Location) == "undefined") global.Location = class {};
 
 
 describe('CandleFW URL Tests', function() {
+
+    before(async ()=>{
+        await URL.polyfill()
+    })
 
     describe("Handles different incomplete forms of URIs", function() {
 
@@ -117,7 +96,7 @@ describe('CandleFW URL Tests', function() {
 
     describe('Fetches local resources', function() {
         it("Gets: /test/data/test.txt", function(done) {
-            let url = new URL("/test/data/test.txt");
+            let url = new URL("./test/data/test.txt");
 
             url.fetchText().then((text) => {
                 text.should.equal("this is the test text!")

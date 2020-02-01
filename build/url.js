@@ -1225,11 +1225,11 @@ const STOCK_LOCATION = {
     search: ""
 };
 
-function fetchLocalText(URL, m = "same-origin") {
+function fetchLocalText(URL, m = "cors") {
     return new Promise((res, rej) => {
         fetch(URL, {
             mode: m, // CORs not allowed
-            credentials: m,
+            credentials: "include",
             method: "GET"
         }).then(r => {
 
@@ -1241,11 +1241,11 @@ function fetchLocalText(URL, m = "same-origin") {
     });
 }
 
-function fetchLocalJSON(URL, m = "same-origin") {
+function fetchLocalJSON(URL, m = "cors") {
     return new Promise((res, rej) => {
         fetch(URL, {
             mode: m, // CORs not allowed
-            credentials: m,
+            credentials: "omit",
             method: "GET"
         }).then(r => {
             if (r.status < 200 || r.status > 299)
@@ -1314,7 +1314,7 @@ function submitJSON(URL, json_data, m = "same-origin") {
  */
 class URL {
 
-    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(), ) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : document.location.toString()) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
@@ -1836,8 +1836,6 @@ URL.R = {
         return URL.G.cacheResource(resource);
     }
 };
-
-
 
 
 

@@ -12,13 +12,21 @@ const STOCK_LOCATION = {
     search: ""
 }
 
-function fetchLocalText(URL, m = "same-origin") {
+function getCORSModes(url) {
+    const IS_CORS = (URL.G.host !== url.host && !!url.host);
+    return {
+        IS_CORS,
+        mode: IS_CORS ? "cors" : "same-origin", // CORs not allowed
+        credentials: IS_CORS ? "omit" : "include",
+    }
+}
+
+function fetchLocalText(url, m = "cors") {
+
     return new Promise((res, rej) => {
-        fetch(URL, {
-            mode: m, // CORs not allowed
-            credentials: m,
+        fetch(url + "", Object.assign({
             method: "GET"
-        }).then(r => {
+        }, getCORSModes(url))).then(r => {
 
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
@@ -28,13 +36,11 @@ function fetchLocalText(URL, m = "same-origin") {
     });
 }
 
-function fetchLocalJSON(URL, m = "same-origin") {
+function fetchLocalJSON(url, m = "cors") {
     return new Promise((res, rej) => {
-        fetch(URL, {
-            mode: m, // CORs not allowed
-            credentials: m,
+        fetch(url + "", Object.assign({
             method: "GET"
-        }).then(r => {
+        }, getCORSModes(url))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
             else
@@ -43,7 +49,7 @@ function fetchLocalJSON(URL, m = "same-origin") {
     });
 }
 
-function submitForm(URL, form_data, m = "same-origin") {
+function submitForm(url, form_data, m = "same-origin") {
     return new Promise((res, rej) => {
         var form;
 
@@ -55,12 +61,10 @@ function submitForm(URL, form_data, m = "same-origin") {
                 form.append(name, form_data[name] + "");
         }
 
-        fetch(URL, {
-            mode: m, // CORs not allowed
-            credentials: m,
+        fetch(url + "", Object.assign({
             method: "POST",
-            body: form,
-        }).then(r => {
+            body: form
+        }, getCORSModes(url))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
             else
@@ -69,18 +73,16 @@ function submitForm(URL, form_data, m = "same-origin") {
     });
 }
 
-function submitJSON(URL, json_data, m = "same-origin") {
+function submitJSON(url, json_data, m = "same-origin") {
     return new Promise((res, rej) => {
-        fetch(URL, {
+        fetch(url + "", Object.assign({
+            method: "POST",
+            body: JSON.stringify(json_data),
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-            },
-            mode: m, // CORs not allowed
-            credentials: m,
-            method: "POST",
-            body: JSON.stringify(json_data),
-        }).then(r => {
+            }
+        }, getCORSModes(url))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
             else
@@ -224,7 +226,7 @@ class URL {
                 this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
 
             }
-        } else if (IS_LOCATION) {
+        } else if (IS_LOCATION && location) {
             this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
             this.port = location.port;
@@ -330,7 +332,7 @@ class URL {
             str.push(`:${this.port}`);
 
         if (this.path)
-            str.push(`${this.path[0] == "/" ? "" : "/"}${this.path}`);
+            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`);
 
         if (this.query)
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
@@ -402,7 +404,7 @@ class URL {
                         str += `&${key}=${val}`;
                 }
             }
-            
+
             str = str.slice(1);
 
             this.query = this.query.split("?")[0] + "?" + str;
@@ -435,7 +437,7 @@ class URL {
                 });
         }
 
-        return fetchLocalText(this.path).then(res => (URL.RC.set(this.path, res), res));
+        return fetchLocalText(this).then(res => (URL.RC.set(this.path, res), res));
     }
 
     /**
@@ -446,11 +448,9 @@ class URL {
      */
     fetchJSON(ALLOW_CACHE = true) {
 
-        let string_url = this.toString();
-
         if (ALLOW_CACHE) {
 
-            let resource = URL.RC.get(string_url);
+            let resource = URL.RC.get(this.path);
 
             if (resource)
                 return new Promise((res) => {
@@ -458,7 +458,7 @@ class URL {
                 });
         }
 
-        return fetchLocalJSON(string_url).then(res => (URL.RC.set(this.path, res), res));
+        return fetchLocalJSON(this).then(res => (URL.RC.set(this.path, res), res));
     }
 
     /**
@@ -476,11 +476,11 @@ class URL {
     }
 
     submitForm(form_data) {
-        return submitForm(this.toString(), form_data);
+        return submitForm(this, form_data);
     }
 
     submitJSON(json_data, mode) {
-        return submitJSON(this.toString(), json_data, mode);
+        return submitJSON(this, json_data, mode);
     }
     /**
      * Goes to the current URL.
@@ -532,7 +532,7 @@ URL.RC = new Map();
 /**
  * The Default Global URL object. 
  */
-URL.G = null;
+URL.G = (typeof location != "undefined") ? new URL(location) : null;
 
 /**
  * The Global object Proxy.
@@ -626,8 +626,6 @@ URL.R = {
 
 
 
-
-
 let SIMDATA = null;
 
 /* Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
@@ -643,36 +641,66 @@ URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIM
 URL.polyfill = async function() {
 
     if (typeof(global) !== "undefined") {
-
-        const 
+        const
             fs = (await import("fs")).promises,
-            path = (await import("path"));
+            path = (await import("path")),
+            http = (await import("http"));
 
-
-        global.Location = (class extends URL {});
 
         global.document = global.document || {}
+        global.document.location = URL.G;
+        global.location = (class extends URL {});
+        URL.G = new URL(process.cwd() + "/");
 
-        global.document.location = new URL(process.cwd() + "/");
         /**
          * Global `fetch` polyfill - basic support
          */
         global.fetch = async (url, data) => {
-            let
-                p = path.resolve(process.cwd(), "" + url),
-                d = await fs.readFile(p, "utf8");
+            console.log(url)
+            if (data.IS_CORS) { // HTTP Fetch
+                return new Promise(res => {
+                    http.get(url, data, (req, error) => {
 
-            try {
-                return {
-                    status: 200,
-                    text: () => {
-                        return {
-                            then: (f) => f(d)
+                        let body = "";
+
+                        req.setEncoding('utf8');
+
+                        req.on("data", d => {
+                            body += d;
+                        })
+
+                        req.on("end", () => {
+                            res({
+                                status: 200,
+                                text: () => {
+                                    return {
+                                        then: (f) => f(body)
+                                    }
+                                }
+                            });
+                        });
+                    });
+                })
+
+
+            } else { //FileSystem Fetch
+                console.log(process.cwd(), url)
+                let
+                    p = path.resolve(process.cwd(), "" + url),
+                    d = await fs.readFile(p, "utf8");
+
+                try {
+                    return {
+                        status: 200,
+                        text: () => {
+                            return {
+                                then: (f) => f(d)
+                            }
                         }
-                    }
-                };
-            } catch (err) {
-                throw err;
+                    };
+                } catch (err) {
+                    throw err;
+                }
             }
         }
     }
