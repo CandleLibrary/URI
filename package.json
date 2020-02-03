@@ -3,6 +3,7 @@
   "version": "0.0.11",
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
+  "type":"module",
   "scripts": {
     "test": "node --experimental-modules node_modules/mocha/bin/_mocha test.js -r esm",
     "build": "rollup --config ./build/config/config.js",
