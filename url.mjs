@@ -103,7 +103,7 @@ function submitJSON(url, json_data, m = "same-origin") {
  */
 class URL {
 
-    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : document.location.toString()) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
@@ -656,7 +656,7 @@ URL.polyfill = async function() {
          * Global `fetch` polyfill - basic support
          */
         global.fetch = async (url, data) => {
-            console.log(url)
+
             if (data.IS_CORS) { // HTTP Fetch
                 return new Promise(res => {
                     http.get(url, data, (req, error) => {
@@ -684,7 +684,6 @@ URL.polyfill = async function() {
 
 
             } else { //FileSystem Fetch
-                console.log(process.cwd(), url)
                 let
                     p = path.resolve(process.cwd(), "" + url),
                     d = await fs.readFile(p, "utf8");
