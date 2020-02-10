@@ -1,9 +1,9 @@
 {
   "name": "@candlefw/url",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "URL/URI parser and basic request handler.",
   "main": "url.mjs",
-  "type":"module",
+  "type": "module",
   "scripts": {
     "test": "node --experimental-modules node_modules/mocha/bin/_mocha test.js -r esm",
     "build": "rollup --config ./build/config/config.js",
