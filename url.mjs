@@ -130,7 +130,6 @@ class URL {
             }
             URL_new.path = a.join("/");
         }
-
         return URL_new;
     }
 
@@ -652,6 +651,19 @@ URL.polyfill = async function() {
         global.location = (class extends URL {});
         URL.G = new URL(process.cwd() + "/");
 
+        const cached = URL.resolveRelative;
+
+        URL.resolveRelative = function(new_url, old_url){
+            
+            let URL_old = (old_url instanceof URL) ? old_url : new URL(old_url);
+            let URL_new = (new_url instanceof URL) ? new_url : new URL(new_url);
+
+            if(URL_new.path[0] == "/"){
+                URL_new.path = path.join(process.cwd() , URL_new.path);
+                return URL_new;
+            }else return cached(URL_new, URL_old);
+        }
+
         /**
          * Global `fetch` polyfill - basic support
          */
@@ -688,6 +700,7 @@ URL.polyfill = async function() {
                     p = path.resolve(process.cwd(), "" + url),
                     d = await fs.readFile(p, "utf8");
 
+                       
                 try {
                     return {
                         status: 200,
