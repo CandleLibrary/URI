@@ -424,7 +424,7 @@ class URL {
      * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
-    fetchText(ALLOW_CACHE = true) {
+    fetchText(ALLOW_CACHE = false) {
 
         if (ALLOW_CACHE) {
 
@@ -445,7 +445,7 @@ class URL {
      * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
-    fetchJSON(ALLOW_CACHE = true) {
+    fetchJSON(ALLOW_CACHE = false) {
 
         if (ALLOW_CACHE) {
 
