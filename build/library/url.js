@@ -80,10 +80,7 @@ function submitJSON(url, json_data, m = "same-origin") {
     });
 }
 /**
- * Used for processing URLs, handling `document.location`, and fetching data.
- * @param      {string}   url           The URL string to wrap.
- * @param      {boolean}  USE_LOCATION  If `true` missing URL parts are filled in with data from `document.location`.
- * @return     {URL}   If a falsy value is passed to `url`, and `USE_LOCATION` is `true` a Global URL is returned. This is directly linked to the page and will _update_ the actual page URL when its values are change. Use with caution.
+ *  Used for processing URLs, handling `document.location`, and fetching data.
  */
 class URL {
     constructor(url = "", USE_LOCATION = false) {
@@ -178,6 +175,11 @@ class URL {
         }
         this._getQuery_(this.query);
     }
+    /**
+     * Resulves a URL relative to an original url.
+     * @param URL_or_url_new
+     * @param URL_or_url_original
+     */
     static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null) {
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
@@ -358,7 +360,8 @@ class URL {
     /**
      * Fetch a JSON value of the remote resource.
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * @param      {boolean}  [ALLOW_CACHE=tru
+Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchJSON(ALLOW_CACHE = false) {
@@ -431,95 +434,6 @@ URL.RC = new Map();
  * The Default Global URL object.
  */
 URL.G = (typeof location != "undefined") ? new URL(location) : null;
-/**
- * The Global object Proxy.
- */
-URL.R = {
-    get protocol() {
-        return URL.G.protocol;
-    },
-    set protocol(v) {
-        return;
-        URL.G.protocol = v;
-    },
-    get user() {
-        return URL.G.user;
-    },
-    set user(v) {
-        return;
-        URL.G.user = v;
-    },
-    get pwd() {
-        return URL.G.pwd;
-    },
-    set pwd(v) {
-        return;
-        URL.G.pwd = v;
-    },
-    get host() {
-        return URL.G.host;
-    },
-    set host(v) {
-        return;
-        URL.G.host = v;
-    },
-    get port() {
-        return URL.G.port;
-    },
-    set port(v) {
-        return;
-        URL.G.port = v;
-    },
-    get path() {
-        return URL.G.path;
-    },
-    set path(v) {
-        return;
-        URL.G.path = v;
-    },
-    get query() {
-        return URL.G.query;
-    },
-    set query(v) {
-        return;
-        URL.G.query = v;
-    },
-    get hash() {
-        return URL.G.hash;
-    },
-    set hash(v) {
-        return;
-        URL.G.hash = v;
-    },
-    get map() {
-        return URL.G.map;
-    },
-    set map(v) {
-        return;
-        URL.G.map = v;
-    },
-    setPath(path) {
-        return URL.G.setPath(path);
-    },
-    setLocation() {
-        return URL.G.setLocation();
-    },
-    toString() {
-        return URL.G.toString();
-    },
-    getData(class_name = "") {
-        return URL.G.getData(class_name = "");
-    },
-    setData(class_name = "", data = null) {
-        return URL.G.setData(class_name, data);
-    },
-    fetchText(ALLOW_CACHE = true) {
-        return URL.G.fetchText(ALLOW_CACHE);
-    },
-    cacheResource(resource) {
-        return URL.G.cacheResource(resource);
-    }
-};
 let SIMDATA = null;
 /** Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
 URL.simulate = function () {
@@ -592,7 +506,6 @@ URL.polyfill = async function () {
         };
     }
 };
-Object.freeze(URL.R);
 Object.freeze(URL.RC);
 Object.seal(URL);
 export default URL;

@@ -1,12 +1,17 @@
 /**
- * Used for processing URLs, handling `document.location`, and fetching data.
- * @param      {string}   url           The URL string to wrap.
- * @param      {boolean}  USE_LOCATION  If `true` missing URL parts are filled in with data from `document.location`.
- * @return     {URL}   If a falsy value is passed to `url`, and `USE_LOCATION` is `true` a Global URL is returned. This is directly linked to the page and will _update_ the actual page URL when its values are change. Use with caution.
+ *  Used for processing URLs, handling `document.location`, and fetching data.
  */
 declare class URL {
     static polyfill: () => void;
     static simulate: () => void;
+    /**
+     * A Global URL object that points to the current execution environment location.
+     */
+    static G: URL;
+    /**
+     * Resource Cache
+     */
+    static RC: Map<string, string>;
     /**
      * URL protocol
      */
@@ -43,7 +48,12 @@ declare class URL {
      * Map of the query data
      */
     map: Map<string, any>;
-    static resolveRelative(URL_or_url_new: any, URL_or_url_original?: any): URL;
+    /**
+     * Resulves a URL relative to an original url.
+     * @param URL_or_url_new
+     * @param URL_or_url_original
+     */
+    static resolveRelative(URL_or_url_new: any, URL_or_url_original?: any): URL | null;
     constructor(url?: string, USE_LOCATION?: boolean);
     /**
     URL Query Syntax
@@ -96,7 +106,8 @@ declare class URL {
     /**
      * Fetch a JSON value of the remote resource.
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * @param      {boolean}  [ALLOW_CACHE=tru
+Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchJSON(ALLOW_CACHE?: boolean): Promise<unknown>;
@@ -105,7 +116,7 @@ declare class URL {
      * @param    {object}  resource  The resource to store at this URL path value.
      * @returns {boolean} `true` if a resource was already cached for this URL, false otherwise.
      */
-    cacheResource(resource: any): any;
+    cacheResource(resource: any): boolean;
     submitForm(form_data: any): Promise<unknown>;
     submitJSON(json_data: any, mode: any): Promise<unknown>;
     /**

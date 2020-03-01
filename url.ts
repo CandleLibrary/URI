@@ -10,7 +10,7 @@ const STOCK_LOCATION = {
     hash: "",
     query: "",
     search: ""
-}
+};
 
 function getCORSModes(url) {
     const IS_CORS = (URL.G.host !== url.host && !!url.host);
@@ -18,7 +18,7 @@ function getCORSModes(url) {
         IS_CORS,
         mode: IS_CORS ? "cors" : "same-origin", // CORs not allowed
         credentials: IS_CORS ? "omit" : "include",
-    }
+    };
 }
 
 function fetchLocalText(url, m = "cors") {
@@ -94,62 +94,73 @@ function submitJSON(url, json_data, m = "same-origin") {
 
 
 /**
- * Used for processing URLs, handling `document.location`, and fetching data.
- * @param      {string}   url           The URL string to wrap.
- * @param      {boolean}  USE_LOCATION  If `true` missing URL parts are filled in with data from `document.location`. 
- * @return     {URL}   If a falsy value is passed to `url`, and `USE_LOCATION` is `true` a Global URL is returned. This is directly linked to the page and will _update_ the actual page URL when its values are change. Use with caution. 
+ *  Used for processing URLs, handling `document.location`, and fetching data.
  */
 class URL {
 
-    static polyfill : ()=>void;
-    static simulate : ()=>void;
+    static polyfill: () => void;
+    static simulate: () => void;
+    /**
+     * A Global URL object that points to the current execution environment location.
+     */
+    static G: URL;
+    /**
+     * Resource Cache
+     */
+    static RC: Map<string, string>;
 
     /**
      * URL protocol
      */
-    protocol : string;
+    protocol: string;
 
     /**
      * Username string
      */
-    user : string;
+    user: string;
 
     /**
      * Password string
      */
-    pwd : string;
+    pwd: string;
 
     /**
      * URL hostname
      */
-    host : string;
+    host: string;
 
     /**
      * URL network port number.
      */
-    port:string;
+    port: string;
 
     /**
      * URL resource path
      */
-    path : string;
+    path: string;
 
     /**
      * URL query string.
      */
-    query : string;
+    query: string;
 
     /**
      * Hashtag string
      */
-    hash : string;
+    hash: string;
 
     /**
      * Map of the query data
      */
-    map : Map<string,any>;
+    map: Map<string, any>;
 
-    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null) {
+    /**
+     * Resulves a URL relative to an original url.
+     * @param URL_or_url_new 
+     * @param URL_or_url_original 
+     */
+    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null)
+        : URL | null {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
@@ -185,14 +196,14 @@ class URL {
             IS_LOCATION = false;
 
 
-        let location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
+        let location = (typeof (document) !== "undefined") ? document.location : STOCK_LOCATION;
 
-        if (typeof(Location) !== "undefined" && url instanceof Location) {
+        if (typeof (Location) !== "undefined" && url instanceof Location) {
             location = url;
             url = "";
             IS_LOCATION = true;
         }
-        if (!url || typeof(url) != "string") {
+        if (!url || typeof (url) != "string") {
             IS_STRING = false;
             IS_LOCATION = true;
             if (URL.GLOBAL && USE_LOCATION)
@@ -444,7 +455,7 @@ class URL {
                 if (key === "")
                     continue;
                 if (class_.size > 0) {
-                    str += `&${key}`
+                    str += `&${key}`;
                     for (let [key, val] of class_.entries())
                         str += `&${key}=${val}`;
                 }
@@ -488,7 +499,8 @@ class URL {
     /**
      * Fetch a JSON value of the remote resource. 
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * @param      {boolean}  [ALLOW_CACHE=tru
+Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchJSON(ALLOW_CACHE = false) {
@@ -579,136 +591,45 @@ URL.RC = new Map();
  */
 URL.G = (typeof location != "undefined") ? new URL(location) : null;
 
-/**
- * The Global object Proxy.
- */
-URL.R = {
-    get protocol() {
-        return URL.G.protocol;
-    },
-    set protocol(v) {
-        return;
-        URL.G.protocol = v;
-    },
-    get user() {
-        return URL.G.user;
-    },
-    set user(v) {
-        return;
-        URL.G.user = v;
-    },
-    get pwd() {
-        return URL.G.pwd;
-    },
-    set pwd(v) {
-        return;
-        URL.G.pwd = v;
-    },
-    get host() {
-        return URL.G.host;
-    },
-    set host(v) {
-        return;
-        URL.G.host = v;
-    },
-    get port() {
-        return URL.G.port;
-    },
-    set port(v) {
-        return;
-        URL.G.port = v;
-    },
-    get path() {
-        return URL.G.path;
-    },
-    set path(v) {
-        return;
-        URL.G.path = v;
-    },
-    get query() {
-        return URL.G.query;
-    },
-    set query(v) {
-        return;
-        URL.G.query = v;
-    },
-    get hash() {
-        return URL.G.hash;
-    },
-    set hash(v) {
-        return;
-        URL.G.hash = v;
-    },
-    get map() {
-        return URL.G.map;
-    },
-    set map(v) {
-        return;
-        URL.G.map = v;
-    },
-    setPath(path) {
-        return URL.G.setPath(path);
-    },
-    setLocation() {
-        return URL.G.setLocation();
-    },
-    toString() {
-        return URL.G.toString();
-    },
-    getData(class_name = "") {
-        return URL.G.getData(class_name = "");
-    },
-    setData(class_name = "", data = null) {
-        return URL.G.setData(class_name, data);
-    },
-    fetchText(ALLOW_CACHE = true) {
-        return URL.G.fetchText(ALLOW_CACHE);
-    },
-    cacheResource(resource) {
-        return URL.G.cacheResource(resource);
-    }
-};
-
-
 
 let SIMDATA = null;
 
 /** Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
-URL.simulate = function() {
+URL.simulate = function () {
     SIMDATA = new Map;
     URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
     URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
-}
+};
 
 /** Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.*/
 URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
 
-URL.polyfill = async function() {
+URL.polyfill = async function () {
 
-    if (typeof(global) !== "undefined") {
+    if (typeof (global) !== "undefined") {
         const
             fs = (await import("fs")).promises,
             path = (await import("path")),
             http = (await import("http"));
 
 
-        global.document = global.document || {}
+        global.document = global.document || {};
         global.document.location = URL.G;
-        global.location = (class extends URL {});
+        global.location = (class extends URL { });
         URL.G = new URL(process.cwd() + "/");
 
         const cached = URL.resolveRelative;
 
-        URL.resolveRelative = function(new_url, old_url){
-            
+        URL.resolveRelative = function (new_url, old_url) {
+
             let URL_old = (old_url instanceof URL) ? old_url : new URL(old_url);
             let URL_new = (new_url instanceof URL) ? new_url : new URL(new_url);
 
-            if(URL_new.path[0] == "/"){
-                URL_new.path = path.join(process.cwd() , URL_new.path);
+            if (URL_new.path[0] == "/") {
+                URL_new.path = path.join(process.cwd(), URL_new.path);
                 return URL_new;
-            }else return cached(URL_new, URL_old);
-        }
+            } else return cached(URL_new, URL_old);
+        };
 
         /**
          * Global `fetch` polyfill - basic support
@@ -725,7 +646,7 @@ URL.polyfill = async function() {
 
                         req.on("data", d => {
                             body += d;
-                        })
+                        });
 
                         req.on("end", () => {
                             res({
@@ -733,12 +654,12 @@ URL.polyfill = async function() {
                                 text: () => {
                                     return {
                                         then: (f) => f(body)
-                                    }
+                                    };
                                 }
                             });
                         });
                     });
-                })
+                });
 
 
             } else { //FileSystem Fetch
@@ -746,25 +667,24 @@ URL.polyfill = async function() {
                     p = path.resolve(process.cwd(), "" + url),
                     d = await fs.readFile(p, "utf8");
 
-                       
+
                 try {
                     return {
                         status: 200,
                         text: () => {
                             return {
                                 then: (f) => f(d)
-                            }
+                            };
                         }
                     };
                 } catch (err) {
                     throw err;
                 }
             }
-        }
+        };
     }
-}
+};
 
-Object.freeze(URL.R);
 Object.freeze(URL.RC);
 Object.seal(URL);
 
