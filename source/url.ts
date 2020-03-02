@@ -155,7 +155,9 @@ class URL {
     map: Map<string, any>;
 
     /**
-     * Resulves a URL relative to an original url.
+     * Resolves a URL relative to an original url. If the environment is NodeJS, 
+     * then node_module resolution may be used if the relative path
+     * does not begin with a ./ or ../.
      * @param URL_or_url_new 
      * @param URL_or_url_original 
      */
@@ -168,6 +170,7 @@ class URL {
         if (!(URL_old + "") || !(URL_new + "")) return null;
 
         let new_path = "";
+
         if (URL_new.path[0] != "/") {
 
             let a = URL_old.path.split("/");
@@ -607,8 +610,10 @@ URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIM
 URL.polyfill = async function () {
 
     if (typeof (global) !== "undefined") {
+
         const
-            fs = (await import("fs")).promises,
+            fsr = (await import("fs")),
+            fs = fsr.promises,
             path = (await import("path")),
             http = (await import("http"));
 
@@ -625,10 +630,42 @@ URL.polyfill = async function () {
             let URL_old = (old_url instanceof URL) ? old_url : new URL(old_url);
             let URL_new = (new_url instanceof URL) ? new_url : new URL(new_url);
 
-            if (URL_new.path[0] == "/") {
+            const first_char = URL_new.path[0];
+
+            if (first_char == "/") {
+                //Prevent traversal outside the CWD for security purposes.
                 URL_new.path = path.join(process.cwd(), URL_new.path);
                 return URL_new;
-            } else return cached(URL_new, URL_old);
+            } else if (first_char !== ".") {
+                //Attempt to resolve the file from the node_modules directories.
+
+                const base_path = URL_old.path.split("/").filter(s => s !== ".."),
+                    new_path = URL_new.path;
+
+                let i = base_path.length;
+
+                while (i-- >= 0) {
+                    try {
+                        let search_path = "";
+
+                        if (base_path[i] == "node_modules")
+                            search_path = path.join(base_path.slice(0, i + 1).join("/"), new_path);
+                        else
+                            search_path = path.join(base_path.slice(0, i + 1).join("/"), "node_modules", new_path);
+
+
+                        const stats = fsr.statSync(search_path);
+
+                        if (stats)
+                            return new URL(search_path);
+
+                    } catch (e) {
+                        //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
+                    }
+                }
+            }
+
+            return cached(URL_new, URL_old);
         };
 
         /**
