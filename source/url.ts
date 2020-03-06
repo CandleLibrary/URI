@@ -1,4 +1,4 @@
-import whind from "@candlefw/whind";
+import { Lexer } from "@candlefw/whind";
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
@@ -9,11 +9,13 @@ const STOCK_LOCATION = {
     path: "",
     hash: "",
     query: "",
-    search: ""
+    search: "",
+    hostname: "",
+    pathname: ""
 };
 
 function getCORSModes(url) {
-    const IS_CORS = (URL.G.host !== url.host && !!url.host);
+    const IS_CORS = (URL.GLOBAL.host !== url.host && !!url.host);
     return {
         IS_CORS,
         mode: IS_CORS ? "cors" : "same-origin", // CORs not allowed
@@ -103,11 +105,11 @@ class URL {
     /**
      * A Global URL object that points to the current execution environment location.
      */
-    static G: URL;
+    static GLOBAL: URL;
     /**
      * Resource Cache
      */
-    static RC: Map<string, string>;
+    static RC: Map<string, any>;
 
     /**
      * URL protocol
@@ -132,7 +134,7 @@ class URL {
     /**
      * URL network port number.
      */
-    port: string;
+    port: number;
 
     /**
      * URL resource path
@@ -154,6 +156,9 @@ class URL {
      */
     map: Map<string, any>;
 
+    /** Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.*/
+    static addResource: (n: string, v: string) => void;
+
     /**
      * Resolves a URL relative to an original url. If the environment is NodeJS, 
      * then node_module resolution may be used if the relative path
@@ -161,7 +166,7 @@ class URL {
      * @param URL_or_url_new 
      * @param URL_or_url_original 
      */
-    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.G) ? URL.G : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null)
+    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.GLOBAL) ? URL.GLOBAL : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null)
         : URL | null {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
@@ -193,7 +198,7 @@ class URL {
         return URL_new;
     }
 
-    constructor(url = "", USE_LOCATION = false) {
+    constructor(url: string | URL | Location = "", USE_LOCATION = false) {
 
         let IS_STRING = true,
             IS_LOCATION = false;
@@ -269,7 +274,7 @@ class URL {
                 this.query = url.query;
                 this.hash = url.hash;
             } else {
-                let part = url.match(uri_reg_ex);
+                let part = (<string>url).match(uri_reg_ex);
 
                 //If the complete string is not matched than we are dealing with something other 
                 //than a pure URL. Thus, no object is returned. 
@@ -279,7 +284,7 @@ class URL {
                 this.user = part[2] || "";
                 this.pwd = part[3] || "";
                 this.host = part[4] || part[5] || part[6] || ((USE_LOCATION) ? location.hostname : "");
-                this.port = parseInt(part[7] || ((USE_LOCATION) ? location.port : 0));
+                this.port = parseInt(part[7]) || ((USE_LOCATION) ? parseInt(location.port) : 0);
                 this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
                 this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
                 this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
@@ -288,18 +293,18 @@ class URL {
         } else if (IS_LOCATION && location) {
             this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
-            this.port = location.port;
+            this.port = parseInt(location.port);
             this.path = location.pathname;
             this.hash = location.hash.slice(1);
             this.query = location.search.slice(1);
-            this._getQuery_(this.query);
+            this._getQuery_();
 
             if (USE_LOCATION) {
-                URL.G = this;
-                return URL.R;
+                URL.GLOBAL = this;
+                return URL.GLOBAL;
             }
         }
-        this._getQuery_(this.query);
+        this._getQuery_();
     }
 
 
@@ -332,7 +337,7 @@ class URL {
     _getQuery_() {
         let map = (this.map) ? this.map : (this.map = new Map());
 
-        let lex = whind(this.query);
+        let lex = new Lexer(this.query);
 
 
         const get_map = (k, m) => (m.has(k)) ? m.get(k) : m.set(k, new Map).get(k);
@@ -373,7 +378,7 @@ class URL {
 
     setLocation() {
         history.replaceState({}, "replaced state", `${this}`);
-        window.onpopstate();
+        //window.onpopstate();
     }
 
     toString() {
@@ -468,7 +473,7 @@ class URL {
 
             this.query = this.query.split("?")[0] + "?" + str;
 
-            if (URL.G == this)
+            if (URL.GLOBAL == this)
                 this.goto();
         } else {
             this.query = "";
@@ -547,10 +552,10 @@ Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is a
      */
     goto() {
         return;
-        let url = this.toString();
-        history.pushState({}, "ignored title", url);
-        window.onpopstate();
-        URL.G = this;
+        //let url = this.toString();
+        //history.pushState({}, "ignored title", url);
+        //window.onpopstate();
+        //URL.GLOBAL = this;
     }
     //Returns the last segment of the path
     get file() {
@@ -592,7 +597,7 @@ URL.RC = new Map();
 /**
  * The Default Global URL object. 
  */
-URL.G = (typeof location != "undefined") ? new URL(location) : null;
+URL.GLOBAL = (typeof location != "undefined") ? new URL(location) : null;
 
 
 let SIMDATA = null;
@@ -604,24 +609,35 @@ URL.simulate = function () {
     URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
 };
 
-/** Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.*/
 URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+
+type URLPolyfilledGlobal = NodeJS.Global & {
+    document: {
+        location: URL;
+    };
+    location: URL;
+
+    fetch: (url: string, data: any) => Promise<any>;
+
+};
+
 
 URL.polyfill = async function () {
 
-    if (typeof (global) !== "undefined") {
+    if (typeof (g) !== "undefined") {
 
         const
             fsr = (await import("fs")),
             fs = fsr.promises,
             path = (await import("path")),
-            http = (await import("http"));
+            http = (await import("http")),
+            //@ts-ignore
+            g: URLPolyfilledGlobal = <unknown>global;
 
-
-        global.document = global.document || {};
-        global.document.location = URL.G;
-        global.location = (class extends URL { });
-        URL.G = new URL(process.cwd() + "/");
+        g.document = g.document || <URLPolyfilledGlobal>{};
+        g.document.location = URL.GLOBAL;
+        g.location = URL.GLOBAL;
+        URL.GLOBAL = new URL(process.cwd() + "/");
 
         const cached = URL.resolveRelative;
 
@@ -671,11 +687,11 @@ URL.polyfill = async function () {
         /**
          * Global `fetch` polyfill - basic support
          */
-        global.fetch = async (url, data) => {
+        g.fetch = async (url, data) => {
 
             if (data.IS_CORS) { // HTTP Fetch
                 return new Promise(res => {
-                    http.get(url, data, (req, error) => {
+                    http.get(url, data, req => {
 
                         let body = "";
 
