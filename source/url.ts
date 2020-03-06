@@ -1,5 +1,7 @@
 import { Lexer } from "@candlefw/whind";
 
+let fetch = (typeof window !== "undefined") ? window.fetch : null;
+
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
 const STOCK_LOCATION = {
@@ -597,7 +599,7 @@ URL.RC = new Map();
 /**
  * The Default Global URL object. 
  */
-URL.GLOBAL = (typeof location != "undefined") ? new URL(location) : null;
+URL.GLOBAL = (typeof location != "undefined") ? new URL(location) : new URL;
 
 
 let SIMDATA = null;
@@ -624,7 +626,7 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 URL.polyfill = async function () {
 
-    if (typeof (g) !== "undefined") {
+    if (typeof (global) !== "undefined") {
 
         const
             fsr = (await import("fs")),
@@ -687,7 +689,7 @@ URL.polyfill = async function () {
         /**
          * Global `fetch` polyfill - basic support
          */
-        g.fetch = async (url, data) => {
+        fetch = g.fetch = async (url, data): Promise<any> => {
 
             if (data.IS_CORS) { // HTTP Fetch
                 return new Promise(res => {
