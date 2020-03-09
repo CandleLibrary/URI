@@ -25,7 +25,7 @@ function getCORSModes(url) {
     };
 }
 
-function fetchLocalText(url, m = "cors") {
+function fetchLocalText(url, m = "cors"): Promise<string> {
 
     return new Promise((res, rej) => {
         fetch(url + "", Object.assign({
@@ -40,7 +40,7 @@ function fetchLocalText(url, m = "cors") {
     });
 }
 
-function fetchLocalJSON(url, m = "cors") {
+function fetchLocalJSON(url, m = "cors"): Promise<object> {
     return new Promise((res, rej) => {
         fetch(url + "", Object.assign({
             method: "GET"
