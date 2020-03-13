@@ -168,21 +168,26 @@ class URL {
      * @param URL_or_url_new 
      * @param URL_or_url_original 
      */
-    static resolveRelative(URL_or_url_new, URL_or_url_original = (URL.GLOBAL) ? URL.GLOBAL : (typeof document != "undefined" && typeof document.location != "undefined") ? document.location.toString() : null)
-        : URL | null {
+    static resolveRelative(
+        URL_or_url_new: URL | string,
+        URL_or_url_original: URL | string
+            = (URL.GLOBAL)
+                ? URL.GLOBAL
+                : (typeof document != "undefined" && typeof document.location != "undefined")
+                    ? document.location.toString()
+                    : null
+    ): URL | null {
 
-        let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
-        let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
+        const
+            URL_old = new URL(URL_or_url_original),
+            URL_new = new URL(URL_or_url_new);
 
         if (!(URL_old + "") || !(URL_new + "")) return null;
-
-        let new_path = "";
 
         if (URL_new.path[0] != "/") {
 
             let a = URL_old.path.split("/");
             let b = URL_new.path.split("/");
-
 
             if (b[0] == "..") a.splice(a.length - 1, 1);
             for (let i = 0; i < b.length; i++) {
@@ -202,17 +207,17 @@ class URL {
 
     constructor(url: string | URL | Location = "", USE_LOCATION = false) {
 
-        let IS_STRING = true,
-            IS_LOCATION = false;
-
-
-        let location = (typeof (document) !== "undefined") ? document.location : STOCK_LOCATION;
+        let
+            IS_STRING = true,
+            IS_LOCATION = false,
+            location = (typeof (document) !== "undefined") ? document.location : STOCK_LOCATION;
 
         if (typeof (Location) !== "undefined" && url instanceof Location) {
             location = url;
             url = "";
             IS_LOCATION = true;
         }
+
         if (!url || typeof (url) != "string") {
             IS_STRING = false;
             IS_LOCATION = true;
@@ -265,33 +270,32 @@ class URL {
          */
         this.map = null;
 
-        if (IS_STRING) {
-            if (url instanceof URL) {
-                this.protocol = url.protocol;
-                this.user = url.user;
-                this.pwd = url.pwd;
-                this.host = url.host;
-                this.port = url.port;
-                this.path = url.path;
-                this.query = url.query;
-                this.hash = url.hash;
-            } else {
-                let part = (<string>url).match(uri_reg_ex);
 
-                //If the complete string is not matched than we are dealing with something other 
-                //than a pure URL. Thus, no object is returned. 
-                if (part[0] !== url) return null;
+        if (url instanceof URL) {
+            this.protocol = url.protocol;
+            this.user = url.user;
+            this.pwd = url.pwd;
+            this.host = url.host;
+            this.port = url.port;
+            this.path = url.path;
+            this.query = url.query;
+            this.hash = url.hash;
+        } else if (IS_STRING) {
+            let part = (<string>url).match(uri_reg_ex);
 
-                this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
-                this.user = part[2] || "";
-                this.pwd = part[3] || "";
-                this.host = part[4] || part[5] || part[6] || ((USE_LOCATION) ? location.hostname : "");
-                this.port = parseInt(part[7]) || ((USE_LOCATION) ? parseInt(location.port) : 0);
-                this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
-                this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
-                this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
+            //If the complete string is not matched than we are dealing with something other 
+            //than a pure URL. Thus, no object is returned. 
+            if (part[0] !== url) return null;
 
-            }
+            this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
+            this.user = part[2] || "";
+            this.pwd = part[3] || "";
+            this.host = part[4] || part[5] || part[6] || ((USE_LOCATION) ? location.hostname : "");
+            this.port = parseInt(part[7]) || ((USE_LOCATION) ? parseInt(location.port) : 0);
+            this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
+            this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
+            this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
+
         } else if (IS_LOCATION && location) {
             this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
@@ -312,22 +316,22 @@ class URL {
 
     /**
     URL Query Syntax
-
+ 
     root => [root_class] [& [class_list]]
          => [class_list]
-
+ 
     root_class = key_list
-
+ 
     class_list [class [& key_list] [& class_list]]
-
+ 
     class => name & key_list
-
+ 
     key_list => [key_val [& key_list]]
-
+ 
     key_val => name = val
-
+ 
     name => ALPHANUMERIC_ID
-
+ 
     val => NUMBER
         => ALPHANUMERIC_ID
     */
@@ -356,7 +360,7 @@ class URL {
                         key = (class_map.set(key_val, lex.s(lfv)), lfv = 0, lex.n.pos);
                     else {
                         key_val = lex.s(key);
-                        key = (class_map = get_map(key_val, map), lex.n.pos);
+                        key = (class_map = get_map(key_val, map), lex.n.pos); new_url;
                     }
                     continue;
                 case "=":
@@ -429,9 +433,10 @@ class URL {
     }
 
     /**
-     * Sets the data in the query string. Wick data is added after a second `?` character in the query field, and appended to the end of any existing data.
-     * @param      {string}  class_name  Class name to use in query string. Defaults to root, no class 
-     * @param      {object | Model | AnyModel}  data        The data
+     * Sets the data in the query string. Wick data is added after a second `?` character in the query field, 
+     * and appended to the end of any existing data.
+     * @param     {object | Model | AnyModel}  data The data
+     * @param     {string}  class_name  Class name to use in query string. Defaults to root, no class 
      */
     setData(data = null, class_name = "") {
 
@@ -451,7 +456,7 @@ class URL {
             }
 
             //set query
-            let class_, null_class, str = "";
+            let null_class, str = "";
 
             if ((null_class = map.get(""))) {
                 if (null_class.size > 0) {
@@ -488,7 +493,8 @@ class URL {
     /**
      * Fetch a string value of the remote resource. 
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. 
+     * If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchText(ALLOW_CACHE = false) {
@@ -509,8 +515,8 @@ class URL {
     /**
      * Fetch a JSON value of the remote resource. 
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=tru
-Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, 
+     * that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchJSON(ALLOW_CACHE = false) {
@@ -589,6 +595,15 @@ Object.freeze(URL.R);e]  If `true`, the return string will be cached. If it is a
     get search() {
         return this.query;
     }
+    /**
+     * True if the path is a relative path. 
+     * 
+     * Path must begin with `../` or `./` to be
+     * considered relative.
+     */
+    get IS_RELATIVE() {
+        return this.path.slice(0, 3) == "../" || this.path.slice(0, 2) == "./";
+    }
 }
 
 /**
@@ -645,19 +660,27 @@ URL.polyfill = async function () {
 
         URL.resolveRelative = function (new_url, old_url) {
 
-            let URL_old = (old_url instanceof URL) ? old_url : new URL(old_url);
-            let URL_new = (new_url instanceof URL) ? new_url : new URL(new_url);
+            let
+                URL_old = new URL(old_url),
+                URL_new = new URL(new_url);
 
             const first_char = URL_new.path[0];
 
             if (first_char == "/") {
                 //Prevent traversal outside the CWD for security purposes.
                 URL_new.path = path.join(process.cwd(), URL_new.path);
+
                 return URL_new;
-            } else if (first_char !== ".") {
+            } else if (!URL_new.IS_RELATIVE) {
                 //Attempt to resolve the file from the node_modules directories.
 
-                const base_path = URL_old.path.split("/").filter(s => s !== ".."),
+                /**
+                 * TODO handle resolution of modules with a more general method. 
+                 * See yarn Plug'n'Play: https://yarnpkg.com/features/pnp
+                 */
+
+                const
+                    base_path = URL_old.path.split("/").filter(s => s !== ".."),
                     new_path = URL_new.path;
 
                 let i = base_path.length;
@@ -670,7 +693,6 @@ URL.polyfill = async function () {
                             search_path = path.join(base_path.slice(0, i + 1).join("/"), new_path);
                         else
                             search_path = path.join(base_path.slice(0, i + 1).join("/"), "node_modules", new_path);
-
 
                         const stats = fsr.statSync(search_path);
 
@@ -743,4 +765,4 @@ URL.polyfill = async function () {
 Object.freeze(URL.RC);
 Object.seal(URL);
 
-export default URL;
+export default URL;``
