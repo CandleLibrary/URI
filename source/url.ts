@@ -360,7 +360,7 @@ class URL {
                         key = (class_map.set(key_val, lex.s(lfv)), lfv = 0, lex.n.pos);
                     else {
                         key_val = lex.s(key);
-                        key = (class_map = get_map(key_val, map), lex.n.pos); new_url;
+                        key = (class_map = get_map(key_val, map), lex.n.pos);
                     }
                     continue;
                 case "=":
@@ -497,7 +497,7 @@ class URL {
      * If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
-    fetchText(ALLOW_CACHE = false) {
+    fetchText(ALLOW_CACHE = false): Promise<string> {
 
         if (ALLOW_CACHE) {
 
@@ -519,7 +519,7 @@ class URL {
      * that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
-    fetchJSON(ALLOW_CACHE = false) {
+    fetchJSON(ALLOW_CACHE = false): Promise<object> {
 
         if (ALLOW_CACHE) {
 
@@ -765,4 +765,4 @@ URL.polyfill = async function () {
 Object.freeze(URL.RC);
 Object.seal(URL);
 
-export default URL;``
+export default URL;
