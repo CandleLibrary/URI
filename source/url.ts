@@ -1,4 +1,4 @@
-import { Lexer } from "@candlefw/whind";
+import { Lexer } from "@candlefw/wind";
 
 let fetch = (typeof window !== "undefined") ? window.fetch : null;
 
