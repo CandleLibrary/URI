@@ -192,8 +192,8 @@ class URL {
             if (b[0] == "..") a.splice(a.length - 1, 1);
             for (let i = 0; i < b.length; i++) {
                 switch (b[i]) {
+                    case ".": a.splice(a.length - 1, 0);
                     case "..":
-                    case ".":
                         a.splice(a.length - 1, 1);
                         break;
                     default:
@@ -714,28 +714,39 @@ URL.polyfill = async function () {
         fetch = g.fetch = async (url, data): Promise<any> => {
 
             if (data.IS_CORS) { // HTTP Fetch
-                return new Promise(res => {
-                    http.get(url, data, req => {
+                return new Promise((res, rej) => {
+                    try {
 
-                        let body = "";
+                        http.get(url, data, req => {
 
-                        req.setEncoding('utf8');
+                            let body = "";
 
-                        req.on("data", d => {
-                            body += d;
-                        });
+                            req.setEncoding('utf8');
 
-                        req.on("end", () => {
-                            res({
-                                status: 200,
-                                text: () => {
-                                    return {
-                                        then: (f) => f(body)
-                                    };
-                                }
+                            req.on("data", d => {
+                                body += d;
+                            });
+
+                            req.on("end", () => {
+                                res({
+                                    status: 200,
+                                    text: () => {
+                                        return {
+                                            then: (f) => f(body)
+                                        };
+                                    },
+                                    json: () => {
+                                        return {
+                                            then: (f) => f(JSON.stringify(body))
+                                        };
+                                    }
+
+                                });
                             });
                         });
-                    });
+                    } catch (e) {
+                        rej(e);
+                    }
                 });
 
 
@@ -751,6 +762,11 @@ URL.polyfill = async function () {
                         text: () => {
                             return {
                                 then: (f) => f(d)
+                            };
+                        },
+                        json: () => {
+                            return {
+                                then: (f) => f(JSON.parse(d))
                             };
                         }
                     };
