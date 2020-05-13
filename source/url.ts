@@ -638,10 +638,13 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 };
 
+let POLLYFILLED = false;
 
 URL.polyfill = async function () {
 
-    if (typeof (global) !== "undefined") {
+    if (typeof (global) !== "undefined" && !POLLYFILLED) {
+
+        POLLYFILLED = true;
 
         const
             fsr = (await import("fs")),
@@ -651,10 +654,10 @@ URL.polyfill = async function () {
             //@ts-ignore
             g: URLPolyfilledGlobal = <unknown>global;
 
+        URL.GLOBAL = new URL(process.cwd() + "/");
         g.document = g.document || <URLPolyfilledGlobal>{};
         g.document.location = URL.GLOBAL;
         g.location = URL.GLOBAL;
-        URL.GLOBAL = new URL(process.cwd() + "/");
 
         const cached = URL.resolveRelative;
 
