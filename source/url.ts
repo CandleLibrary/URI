@@ -602,7 +602,7 @@ class URL {
      * considered relative.
      */
     get IS_RELATIVE() {
-        return this.path.slice(0, 3) == "../" || this.path.slice(0, 2) == "./";
+        return this.path.slice(0, 3) == "../" || this.path.slice(0, 2) == "./" || this.path.slice(0, 1) != "/";
     }
 }
 
