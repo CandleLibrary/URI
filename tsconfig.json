@@ -19,6 +19,7 @@
         "declarationDir": "./build/types",
         "declaration": true,
         "moduleResolution": "node",
-        "module": "ESNext"
+        "module": "ESNext",
+        "skipLibCheck": true
     }
 }

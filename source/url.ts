@@ -1,5 +1,3 @@
-import { Lexer } from "@candlefw/wind";
-
 let fetch = (typeof window !== "undefined") ? window.fetch : null;
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
@@ -341,38 +339,7 @@ class URL {
      * @private
      */
     _getQuery_() {
-        let map = (this.map) ? this.map : (this.map = new Map());
-
-        let lex = new Lexer(this.query);
-
-
-        const get_map = (k, m) => (m.has(k)) ? m.get(k) : m.set(k, new Map).get(k);
-
-        let key = 0,
-            key_val = "",
-            class_map = get_map(key_val, map),
-            lfv = 0;
-
-        while (!lex.END) {
-            switch (lex.tx) {
-                case "&": //At new class or value
-                    if (lfv > 0)
-                        key = (class_map.set(key_val, lex.s(lfv)), lfv = 0, lex.n.pos);
-                    else {
-                        key_val = lex.s(key);
-                        key = (class_map = get_map(key_val, map), lex.n.pos);
-                    }
-                    continue;
-                case "=":
-                    //looking for a value now
-                    key_val = lex.s(key);
-                    lfv = lex.n.pos;
-                    continue;
-            }
-            lex.n;
-        }
-
-        if (lfv > 0) class_map.set(key_val, lex.s(lfv));
+        return "TODO";
     }
 
     setPath(path) {
@@ -602,7 +569,9 @@ class URL {
      * considered relative.
      */
     get IS_RELATIVE() {
-        return this.path.slice(0, 3) == "../" || this.path.slice(0, 2) == "./" || this.path.slice(0, 1) != "/";
+        return this.path.slice(0, 3) == "../"
+            || this.path.slice(0, 2) == "./";
+        //|| this.path.slice(0, 1) != "/";
     }
 }
 
@@ -670,6 +639,7 @@ URL.polyfill = async function () {
             const first_char = URL_new.path[0];
 
             if (first_char == "/") {
+
                 //Prevent traversal outside the CWD for security purposes.
                 URL_new.path = path.join(process.cwd(), URL_new.path);
 

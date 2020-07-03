@@ -25,12 +25,9 @@
     "url": "https://github.com/galactrax/cfw-url/issues"
   },
   "homepage": "https://github.com/galactrax/cfw-url#readme",
-  "dependencies": {
-    "@candlefw/wind": "^0.4.1-dev"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@rollup/plugin-node-resolve": "7.1.1",
-    "chai": "^4.2.0",
     "rollup": "^2.0.6"
   }
 }
