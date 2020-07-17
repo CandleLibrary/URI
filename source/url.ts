@@ -216,9 +216,11 @@ class URL {
             IS_LOCATION = true;
         }
 
-        if (!url || typeof (url) != "string") {
+        if ((!url || typeof (url) != "string") && !(<unknown>url instanceof URL)) {
             IS_STRING = false;
+
             IS_LOCATION = true;
+
             if (URL.GLOBAL && USE_LOCATION)
                 return URL.GLOBAL;
         }
@@ -339,7 +341,13 @@ class URL {
      * @private
      */
     _getQuery_() {
-        return "TODO";
+        if (this.query) {
+            const data = this.query
+                .split(/(?<!\\)\?/)
+                .map(s => s.split("="))
+                .map(s => (s[1] = s[1] || true, s));
+            this.map = new Map<string, string>(data);
+        }
     }
 
     setPath(path) {
@@ -390,11 +398,7 @@ class URL {
         if (this.map) {
             let out = {};
             let _c = this.map.get(class_name);
-            if (_c) {
-                for (let [key, val] of _c.entries())
-                    out[key] = val;
-                return out;
-            }
+            return _c;
         }
         return null;
     }
@@ -405,57 +409,32 @@ class URL {
      * @param     {object | Model | AnyModel}  data The data
      * @param     {string}  class_name  Class name to use in query string. Defaults to root, no class 
      */
-    setData(data = null, class_name = "") {
+    setData(data_name: string = "", value: any) {
 
-        if (data) {
+        if (data_name) {
 
             let map = this.map = new Map();
 
-            let store = (map.has(class_name)) ? map.get(class_name) : (map.set(class_name, new Map()).get(class_name));
+            map.set(data_name, value);
 
-            //If the data is a falsy value, delete the association.
+            let str = [];
 
-            for (let n in data) {
-                if (data[n] !== undefined && typeof data[n] !== "object")
-                    store.set(n, data[n]);
+            for (const [key, value] of map.entries()) {
+                if (!value) { }
+                else if (value === true)
+                    str.push(`${key}`);
                 else
-                    store.delete(n);
+                    str.push(`${key}=${value}`);
             }
 
-            //set query
-            let null_class, str = "";
-
-            if ((null_class = map.get(""))) {
-                if (null_class.size > 0) {
-                    for (let [key, val] of null_class.entries())
-                        str += `&${key}=${val}`;
-
-                }
-            }
-
-            for (let [key, class_] of map.entries()) {
-                if (key === "")
-                    continue;
-                if (class_.size > 0) {
-                    str += `&${key}`;
-                    for (let [key, val] of class_.entries())
-                        str += `&${key}=${val}`;
-                }
-            }
-
-            str = str.slice(1);
-
-            this.query = this.query.split("?")[0] + "?" + str;
-
-            if (URL.GLOBAL == this)
-                this.goto();
+            this.query = str.join("?");
         } else {
             this.query = "";
         }
 
         return this;
-
     }
+
 
     /**
      * Fetch a string value of the remote resource. 
