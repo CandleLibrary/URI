@@ -1,3 +1,5 @@
+import { addModuleToCFW } from "@candlefw/cfw";
+
 let fetch = (typeof window !== "undefined") ? window.fetch : null;
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
@@ -345,7 +347,9 @@ class URL {
             const data = this.query
                 .split(/(?<!\\)\?/)
                 .map(s => s.split("="))
-                .map(s => (s[1] = s[1] || true, s));
+                .map(s => (s[1] = s[1] || true, s));;
+
+            //@ts-ignore
             this.map = new Map<string, string>(data);
         }
     }
@@ -395,10 +399,9 @@ class URL {
      * @return     {object}  The data.
      */
     getData(class_name = "") {
-        if (this.map) {
-            let out = {};
-            let _c = this.map.get(class_name);
-            return _c;
+        if (this.map && this.map.has(class_name)) {
+            const val = this.map.get(class_name);
+            return val || true;
         }
         return null;
     }
@@ -732,5 +735,7 @@ URL.polyfill = async function () {
 
 Object.freeze(URL.RC);
 Object.seal(URL);
+
+addModuleToCFW(URL, "url");
 
 export default URL;
