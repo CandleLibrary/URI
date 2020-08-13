@@ -122,7 +122,7 @@ SEQUENCE: {
 
         let url = new URL("?bar=foo&boo&roo=@$%^&bat=3");
 
-        let data = url.getData("boo");
+        let data = url.getData();
 
         ((data != undefined));
 
@@ -133,8 +133,6 @@ SEQUENCE: {
         ((data.bat != undefined));
 
         ((data.bat === "3"));
-
-        data = url.getData();
 
         ((data != undefined));
 
@@ -158,8 +156,8 @@ SEQUENCE: {
 
         let url = new URL();
 
-        url.setData({ data: "my_data" }, "roo");
+        url.setData({ data: "my_data", roo: true });
 
-        ((url.query == "?roo&data=my_data"));
+        ((url.query == "?data=my_data&roo"));
     }
 }

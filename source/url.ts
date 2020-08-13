@@ -28,8 +28,8 @@ function getCORSModes(url) {
 function fetchLocalText(url, m = "cors"): Promise<string> {
 
     return new Promise((res, rej) => {
-        fetch(url + "", Object.assign({
-            method: "GET"
+        fetch(url + "", <RequestInit>Object.assign({
+            method: "GET",
         }, getCORSModes(url))).then(r => {
 
             if (r.status < 200 || r.status > 299)
@@ -42,7 +42,7 @@ function fetchLocalText(url, m = "cors"): Promise<string> {
 
 function fetchLocalJSON(url, m = "cors"): Promise<object> {
     return new Promise((res, rej) => {
-        fetch(url + "", Object.assign({
+        fetch(url + "", <RequestInit>Object.assign({
             method: "GET"
         }, getCORSModes(url))).then(r => {
             if (r.status < 200 || r.status > 299)
@@ -65,7 +65,7 @@ function submitForm(url, form_data, m = "same-origin") {
                 form.append(name, form_data[name] + "");
         }
 
-        fetch(url + "", Object.assign({
+        fetch(url + "", <RequestInit>Object.assign({
             method: "POST",
             body: form
         }, getCORSModes(url))).then(r => {
@@ -79,7 +79,7 @@ function submitForm(url, form_data, m = "same-origin") {
 
 function submitJSON(url, json_data, m = "same-origin") {
     return new Promise((res, rej) => {
-        fetch(url + "", Object.assign({
+        fetch(url + "", <RequestInit>Object.assign({
             method: "POST",
             body: JSON.stringify(json_data),
             headers: {
@@ -345,9 +345,8 @@ class URL {
     _getQuery_() {
         if (this.query) {
             const data = this.query
-                .split(/(?<!\\)\?/)
-                .map(s => s.split("="))
-                .map(s => (s[1] = s[1] || true, s));;
+                .split(/(?<!\\)\&/g)
+                .map(s => s.split("="));
 
             //@ts-ignore
             this.map = new Map<string, string>(data);
@@ -398,42 +397,35 @@ class URL {
      * @param      {string}  class_name  The class name
      * @return     {object}  The data.
      */
-    getData(class_name = "") {
-        if (this.map && this.map.has(class_name)) {
-            const val = this.map.get(class_name);
-            return val || true;
+    getData() {
+        const data = {};
+        for (const [key, val] of this.map.entries()) {
+            if (!val)
+                data[key] = true;
+            else
+                data[key] = val;
         }
-        return null;
+        return data;
     }
 
     /**
      * Sets the data in the query string. Wick data is added after a second `?` character in the query field, 
      * and appended to the end of any existing data.
      * @param     {object | Model | AnyModel}  data The data
-     * @param     {string}  class_name  Class name to use in query string. Defaults to root, no class 
-     */
-    setData(data_name: string = "", value: any) {
+    */
+    setData(data: any) {
 
-        if (data_name) {
+        const query_string = [];
 
-            let map = this.map = new Map();
-
-            map.set(data_name, value);
-
-            let str = [];
-
-            for (const [key, value] of map.entries()) {
-                if (!value) { }
-                else if (value === true)
-                    str.push(`${key}`);
-                else
-                    str.push(`${key}=${value}`);
-            }
-
-            this.query = str.join("?");
-        } else {
-            this.query = "";
+        for (const name in data) {
+            const val = data[name];
+            if (typeof val == "boolean") {
+                if (val) query_string.push(name);
+            } else
+                query_string.push(`${name}=${val.toString()}`);
         }
+
+        this.query = query_string.length > 0 ? "?" + query_string.join("&") : "";
 
         return this;
     }

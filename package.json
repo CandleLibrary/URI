@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "cfw.test ./test/test.js",
+    "test.watch": "cfw.test -w ./test/test.js",
     "build": "./bin/cfw_test.js ./load_test.spec.js",
     "prepublish": "tsc -p ./tsconfig.json && yarn test"
   },
