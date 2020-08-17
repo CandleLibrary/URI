@@ -397,14 +397,16 @@ class URL {
      * @param      {string}  class_name  The class name
      * @return     {object}  The data.
      */
-    getData() {
+    getData(): any {
         const data = {};
-        for (const [key, val] of this.map.entries()) {
-            if (!val)
-                data[key] = true;
-            else
-                data[key] = val;
-        }
+        if (this.map)
+            for (const [key, val] of this.map.entries()) {
+                if (!val)
+                    data[key] = true;
+                else
+                    data[key] = val;
+            }
+            
         return data;
     }
 
