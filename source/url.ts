@@ -98,11 +98,22 @@ function submitJSON(url, json_data, m = "same-origin") {
 
 
 /**
- *  Used for processing URLs, handling `document.location`, and fetching data.
+ *  Encapsulates a URL string and provides methods to manipulate the URL segments and send and retrieve data.
+ * @type {URL}
  */
 class URL {
+    /**
+     * @deprecated
+     */
 
-    static polyfill: () => void;
+    static polyfill: (dir?: string) => Promise<void>;
+
+    /**
+     * Prepares URL to operate in a NodeJS environment.
+     * 
+     * Call before using any IO methods. 
+     */
+    static server: (dir?: string) => Promise<void>;
     static simulate: () => void;
     /**
      * A Global URL object that points to the current execution environment location.
@@ -114,42 +125,42 @@ class URL {
     static RC: Map<string, any>;
 
     /**
-     * URL protocol
+     * URL protocol segment
      */
     protocol: string;
 
     /**
-     * Username string
+     * Username segment
      */
     user: string;
 
     /**
-     * Password string
+     * Password segment
      */
     pwd: string;
 
     /**
-     * URL hostname
+     * Hostname segment
      */
     host: string;
 
     /**
-     * URL network port number.
+     * Network port number segment
      */
     port: number;
 
     /**
-     * URL resource path
+     * Resource path segment
      */
     path: string;
 
     /**
-     * URL query string.
+     * Query segment
      */
     query: string;
 
     /**
-     * Hashtag string
+     * Hash segment
      */
     hash: string;
 
@@ -158,15 +169,19 @@ class URL {
      */
     map: Map<string, any>;
 
-    /** Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.*/
+    /** 
+     * Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
+     * 
+     * Fetch requests to matching URL will return the value string as a reply.
+     */
     static addResource: (n: string, v: string) => void;
 
     /**
      * Resolves a URL relative to an original url. If the environment is NodeJS, 
      * then node_module resolution may be used if the relative path
      * does not begin with a ./ or ../.
-     * @param URL_or_url_new 
-     * @param URL_or_url_original 
+     * @param {URL | string} URL_or_url_new 
+     * @param {URL | string} URL_or_url_original 
      */
     static resolveRelative(
         URL_or_url_new: URL | string,
@@ -204,7 +219,11 @@ class URL {
         }
         return URL_new;
     }
-
+    /**
+     * Create new URL object.
+     * @param {URL | string | Location} [url=""] A string or another {URL} object that will populate the URL segment properties. 
+     * @param {boolean} [USE_LOCATION=false] If the url argument is blank or {undefined} then URL will pulled from the document's location.
+     */
     constructor(url: string | URL | Location = "", USE_LOCATION = false) {
 
         let
@@ -315,34 +334,11 @@ class URL {
         this._getQuery_();
     }
 
-
-    /**
-    URL Query Syntax
- 
-    root => [root_class] [& [class_list]]
-         => [class_list]
- 
-    root_class = key_list
- 
-    class_list [class [& key_list] [& class_list]]
- 
-    class => name & key_list
- 
-    key_list => [key_val [& key_list]]
- 
-    key_val => name = val
- 
-    name => ALPHANUMERIC_ID
- 
-    val => NUMBER
-        => ALPHANUMERIC_ID
-    */
-
     /**
      * Pulls query string info into this.map
      * @private
      */
-    _getQuery_() {
+    private _getQuery_() {
         if (this.query) {
             const data = this.query
                 .split(/(?<!\\)\&/g)
@@ -352,17 +348,23 @@ class URL {
             this.map = new Map<string, string>(data);
         }
     }
-
-    setPath(path) {
+    /**
+     * Create new URL with the path changed to match the argument
+     * 
+     * @param path - New path 
+     * @returns {URL}
+     */
+    setPath(path: string): URL {
 
         this.path = path;
 
         return new URL(this);
     }
-
+    /**
+    *  Changes the document's location to match the URL.
+    */
     setLocation() {
         history.replaceState({}, "replaced state", `${this}`);
-        //window.onpopstate();
     }
 
     toString() {
@@ -394,8 +396,8 @@ class URL {
 
     /**
      * Pulls data stored in query string into an object an returns that.
-     * @param      {string}  class_name  The class name
-     * @return     {object}  The data.
+     * @param  {string}  class_name  The class name
+     * @return {any}  The data.
      */
     getData(): any {
         const data = {};
@@ -406,14 +408,15 @@ class URL {
                 else
                     data[key] = val;
             }
-            
+
         return data;
     }
 
     /**
      * Sets the data in the query string. Wick data is added after a second `?` character in the query field, 
      * and appended to the end of any existing data.
-     * @param     {object | Model | AnyModel}  data The data
+     * 
+     * @param {any}  data An object with prop_name/value pairs that will be inserted into the query string.
     */
     setData(data: any) {
 
@@ -427,7 +430,7 @@ class URL {
                 query_string.push(`${name}=${val.toString()}`);
         }
 
-        this.query = query_string.length > 0 ? "?" + query_string.join("&") : "";
+        this.query = (query_string.length > 0 ? "?" + query_string.join("&") : "").replace(/\ +/g, "%20");
 
         return this;
     }
@@ -437,7 +440,8 @@ class URL {
      * Fetch a string value of the remote resource. 
      * Just uses path component of URL. Must be from the same origin.
      * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. 
-     * If it is already cached, that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
+     * If it is already cached, the cached result will be returned instead. 
+     * If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchText(ALLOW_CACHE = false): Promise<string> {
@@ -498,8 +502,9 @@ class URL {
     submitJSON(json_data, mode) {
         return submitJSON(this, json_data, mode);
     }
+
     /**
-     * Goes to the current URL.
+     * @deprecated Goes to the current URL.
      */
     goto() {
         return;
@@ -508,49 +513,78 @@ class URL {
         //window.onpopstate();
         //URL.GLOBAL = this;
     }
-    //Returns the last segment of the path
+
+    /**
+     * Name of the file + extension in the path
+     * @readonly
+     */
     get file() {
         return this.path.split("/").pop();
     }
-    //returns the name of the file less the extension
-    get filename() {
+
+    /**
+     * Name of the file - extension in the path
+     * of the URL path
+     * @readonly
+     */
+    get filename(): string {
         return this.file.split(".").shift();
     }
 
-    //Returns the all but the last segment of the path
-    get dir() {
+    /**
+     * Directory segment of the path.
+     * @readonly
+     */
+    get dir(): string {
         return this.path.split("/").slice(0, -1).join("/") || "/";
     }
 
-    get pathname() {
+    /**
+    * Alias of path property
+    * @readonly
+    */
+    get pathname(): string {
         return this.path;
     }
 
-    get href() {
+    /**
+     * Alias of URL~toString()
+     * @readonly
+     */
+    get href(): string {
         return this.toString();
     }
 
-    get ext() {
+    /**
+    * Portion of the path following the last [\.]
+    * if such a segment exists within the path.
+    * @readonly
+    */
+    get ext(): string {
         const m = this.path.match(/\.([^\.]*)$/);
         return m ? m[1] : "";
     }
 
-    get search() {
+    /**
+     * Alias of URL~query
+     * @readonly
+     */
+    get search(): string {
         return this.query;
     }
+
     /**
-     * True if the path is a relative path. 
+     * True if the path portion of the URL is a relative path. 
      * 
-     * Path must begin with `../` or `./` to be
-     * considered relative.
+     * Path must begin with `../` or `./` to be considered relative.
+     * 
+     * @readonly
      */
-    get IS_RELATIVE() {
+    get IS_RELATIVE(): boolean {
         return this.path.slice(0, 3) == "../"
             || this.path.slice(0, 2) == "./";
-        //|| this.path.slice(0, 1) != "/";
     }
 }
-
 /**
  * The fetched resource cache.
  */
@@ -585,7 +619,7 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 let POLLYFILLED = false;
 
-URL.polyfill = async function () {
+URL.server = async function (root_dir: string = process.cwd()) {
 
     if (typeof (global) !== "undefined" && !POLLYFILLED) {
 
@@ -599,7 +633,7 @@ URL.polyfill = async function () {
             //@ts-ignore
             g: URLPolyfilledGlobal = <unknown>global;
 
-        URL.GLOBAL = new URL(process.cwd() + "/");
+        URL.GLOBAL = new URL(root_dir + "/");
         g.document = g.document || <URLPolyfilledGlobal>{};
         g.document.location = URL.GLOBAL;
         g.location = URL.GLOBAL;
@@ -637,6 +671,7 @@ URL.polyfill = async function () {
                 while (i-- >= 0) {
                     try {
                         let search_path = "";
+
 
                         if (base_path[i] == "node_modules")
                             search_path = path.join(base_path.slice(0, i + 1).join("/"), new_path);
@@ -726,7 +761,10 @@ URL.polyfill = async function () {
         };
     }
 };
-
+/**
+ * @deprecated in favor of URL.server()
+ */
+URL.polyfill = URL.server;
 Object.freeze(URL.RC);
 Object.seal(URL);
 
