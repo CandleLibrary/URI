@@ -358,7 +358,7 @@ class URL {
 
         this.path = path;
 
-        return new URL(this);
+        return this;
     }
     /**
     *  Changes the document's location to match the URL.
@@ -595,6 +595,19 @@ class URL {
         return this.path.slice(0, 3) == "../"
             || this.path.slice(0, 2) == "./";
     }
+
+    static getEXEURL(imp: ImportMeta): URL {
+
+        let str = imp.url ?? "";
+
+        const
+            fn_regex = /(file\:\/\/)(\/)*([A-Z]\:)*/g,
+            exe_url = ("/" + str.replace(fn_regex, "") + "/").replace(/\/\//g, "//");
+
+        return new URL(exe_url);
+    }
+    static getCWDURL(): URL { return URL.GLOBAL; }
+
     /**
      * Compares the path of the given url with its own path.
      * If own path is absolute then returns true if the arg url path is an leading substring of 
@@ -653,15 +666,17 @@ let POLLYFILLED = false;
 
 URL.server = async function (root_dir: string = process.cwd()) {
 
+    const
+        fsr = (await import("fs")),
+        fs = fsr.promises,
+        path = (await import("path")),
+        http = (await import("http"));
+
     if (typeof (global) !== "undefined" && !POLLYFILLED) {
 
         POLLYFILLED = true;
 
         const
-            fsr = (await import("fs")),
-            fs = fsr.promises,
-            path = (await import("path")),
-            http = (await import("http")),
             //@ts-ignore
             g: URLPolyfilledGlobal = <unknown>global;
 
@@ -791,6 +806,30 @@ URL.server = async function (root_dir: string = process.cwd()) {
                 }
             }
         };
+
+
+        /**
+         * Returns a URL pointing to the CWD root directory.
+         */
+        URL.getCWDURL = (
+
+            (cache: URL = null) => {
+
+                return function (): URL {
+
+                    if (cache)
+                        return new URL(cache);
+
+                    const
+                        repo_dir = process.cwd(),
+                        doc_dir = path.join("/", repo_dir, "/");
+
+                    cache = new URL(doc_dir);
+
+                    return new URL(cache);
+                };
+            }
+        )();
     }
 };
 /**
