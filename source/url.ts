@@ -561,8 +561,19 @@ class URL {
     * @readonly
     */
     get ext(): string {
-        const m = this.path.match(/\.([^\.]*)$/);
+        const m = this.file.match(/\.([^\.]*)$/);
         return m ? m[1] : "";
+    }
+
+    set ext(ext) {
+
+        ext = "." + ext.replace(/\./g, "");
+
+        const current_ext = this.ext;
+
+        if (current_ext)
+            this.path = this.path.replace("." + current_ext, ext);
+        else this.path += ext;
     }
 
     /**
