@@ -595,6 +595,27 @@ class URL {
         return this.path.slice(0, 3) == "../"
             || this.path.slice(0, 2) == "./";
     }
+    /**
+     * Compares the path of the given url with its own path.
+     * If own path is absolute then returns true if the arg url path is an leading substring of 
+     * this path. 
+     */
+    isSUBDIRECTORY_OF(candidate_parent: URL): boolean {
+
+        if (candidate_parent.IS_RELATIVE) return false;
+
+        const own_path = (this.IS_RELATIVE
+            ? URL.resolveRelative(this, candidate_parent)
+            : this).dir.split("/"),
+            candidate_path = candidate_parent.dir.split("/");
+
+        if (candidate_path.length >= own_path.length) return false;
+
+        for (let i = 0; i < candidate_path.length; i++)
+            if (candidate_path[i] !== own_path[i]) return false;
+
+        return true;
+    }
 }
 /**
  * The fetched resource cache.
