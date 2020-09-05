@@ -125,6 +125,13 @@ class URL {
     static RC: Map<string, any>;
 
     /**
+     * ONLY AVAILABLE ON SERVER
+     * 
+     * Return `true` of resource or directory exists on the server.
+     */
+    DOES_THIS_EXIST: () => Promise<boolean>;
+
+    /**
      * URL protocol segment
      */
     protocol: string;
@@ -830,6 +837,16 @@ URL.server = async function (root_dir: string = process.cwd()) {
                 };
             }
         )();
+
+        URL.prototype.DOES_THIS_EXIST = async function () {
+            if (!this.IS_RELATIVE) {
+                try {
+                    const state = fs.stat(this.toString());
+                    return true;
+                } catch (e) { }
+            }
+            return false;
+        };
     }
 };
 /**
