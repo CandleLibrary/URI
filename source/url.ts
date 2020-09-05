@@ -669,7 +669,7 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 };
 
-let POLLYFILLED = false;
+let POLYFILLED = false;
 
 URL.server = async function (root_dir: string = process.cwd()) {
 
@@ -679,9 +679,12 @@ URL.server = async function (root_dir: string = process.cwd()) {
         path = (await import("path")),
         http = (await import("http"));
 
-    if (typeof (global) !== "undefined" && !POLLYFILLED) {
 
-        POLLYFILLED = true;
+    if (typeof (global) !== "undefined" && !POLYFILLED) {
+
+        URL.GLOBAL = new URL(root_dir);
+
+        POLYFILLED = true;
 
         const
             //@ts-ignore
@@ -698,6 +701,9 @@ URL.server = async function (root_dir: string = process.cwd()) {
             let
                 URL_old = new URL(old_url),
                 URL_new = new URL(new_url);
+
+            if (!URL_new.IS_RELATIVE)
+                return URL_new;
 
             const first_char = URL_new.path[0];
 
