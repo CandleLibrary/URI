@@ -543,7 +543,7 @@ class URL {
      * @readonly
      */
     get dir(): string {
-        return this.path.split("/").slice(0, -1).join("/") || "/";
+        return this.path.split("/").slice(0, -1).join("/") + "/";
     }
 
     /**
@@ -626,8 +626,8 @@ class URL {
 
         const own_path = (this.IS_RELATIVE
             ? URL.resolveRelative(this, candidate_parent)
-            : this).dir.split("/"),
-            candidate_path = candidate_parent.dir.split("/");
+            : this).dir.split("/").slice(0, -1),
+            candidate_path = candidate_parent.dir.split("/").slice(0, -1);
 
         if (candidate_path.length >= own_path.length) return false;
 
@@ -687,7 +687,6 @@ URL.server = async function (root_dir: string = process.cwd()) {
             //@ts-ignore
             g: URLPolyfilledGlobal = <unknown>global;
 
-        URL.GLOBAL = new URL(root_dir + "/");
         g.document = g.document || <URLPolyfilledGlobal>{};
         g.document.location = URL.GLOBAL;
         g.location = URL.GLOBAL;
@@ -814,37 +813,9 @@ URL.server = async function (root_dir: string = process.cwd()) {
             }
         };
 
-
-        /**
-         * Returns a URL pointing to the CWD root directory.
-         */
-        URL.getCWDURL = (
-
-            (cache: URL = null) => {
-
-                return function (): URL {
-
-                    if (cache)
-                        return new URL(cache);
-
-                    const
-                        repo_dir = process.cwd(),
-                        doc_dir = path.join("/", repo_dir, "/");
-
-                    cache = new URL(doc_dir);
-
-                    return new URL(cache);
-                };
-            }
-        )();
-
         URL.prototype.DOES_THIS_EXIST = async function () {
-            if (!this.IS_RELATIVE) {
-                try {
-                    const state = fs.stat(this.toString());
-                    return true;
-                } catch (e) { }
-            }
+            if (!this.IS_RELATIVE)
+                return !!(await fs.stat(this.toString()).catch(e => false));
             return false;
         };
     }
