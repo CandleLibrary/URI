@@ -1,13 +1,13 @@
 {
   "name": "@candlefw/url",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "URL/URI parser and basic request handler.",
   "main": "./build/library/url.js",
   "types": "./build/types/url.d.ts",
   "type": "module",
   "scripts": {
-    "test": "cfw.test ./test/test.js",
-    "test.watch": "cfw.test -w ./test/test.js",
+    "test": "cfw.test ./test/**",
+    "test.watch": "cfw.test -w ./test/**",
     "build": "./bin/cfw_test.js ./load_test.spec.js",
     "prepublish": "tsc -p ./tsconfig.json && yarn test"
   },
@@ -27,10 +27,9 @@
   },
   "homepage": "https://github.com/galactrax/cfw-url#readme",
   "dependencies": {
-    "@candlefw/cfw": "latest"
+    "@candlefw/cfw": "*"
   },
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "7.1.1",
-    "rollup": "^2.0.6"
+    "@candlefw/test": "*"
   }
 }

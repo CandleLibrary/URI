@@ -222,7 +222,7 @@ class URL {
                         a.push(b[i]);
                 }
             }
-            URL_new.path = a.join("/");
+            URL_new.path = a.join("/").replace(/\/\//g, "/");
         }
         return URL_new;
     }
@@ -389,7 +389,7 @@ class URL {
             str.push(`:${this.port}`);
 
         if (this.path)
-            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`);
+            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`.replace("//", "/"));
 
         if (this.query)
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
@@ -696,7 +696,7 @@ URL.server = async function (root_dir: string = process.cwd()) {
 
         const cached = URL.resolveRelative;
 
-        URL.resolveRelative = function (new_url, old_url) {
+        URL.resolveRelative = function (new_url, old_url = URL.GLOBAL) {
 
             let
                 URL_old = new URL(old_url),
@@ -713,6 +713,7 @@ URL.server = async function (root_dir: string = process.cwd()) {
                 URL_new.path = path.join(process.cwd(), URL_new.path);
 
                 return URL_new;
+
             } else if (!URL_new.IS_RELATIVE) {
                 //Attempt to resolve the file from the node_modules directories.
 
