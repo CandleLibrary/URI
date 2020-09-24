@@ -305,7 +305,7 @@ class URL {
             this.pwd = url.pwd;
             this.host = url.host;
             this.port = url.port;
-            this.path = url.path;
+            this.path = url.path.replace(/\/\//g, "/");
             this.query = url.query;
             this.hash = url.hash;
         } else if (IS_STRING) {
@@ -320,7 +320,7 @@ class URL {
             this.pwd = part[3] || "";
             this.host = part[4] || part[5] || part[6] || ((USE_LOCATION) ? location.hostname : "");
             this.port = parseInt(part[7]) || ((USE_LOCATION) ? parseInt(location.port) : 0);
-            this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
+            this.path = (part[8] || ((USE_LOCATION) ? location.pathname : "")).replace(/\/\//g, "/");
             this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
             this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
 
@@ -328,7 +328,7 @@ class URL {
             this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
             this.port = parseInt(location.port);
-            this.path = location.pathname;
+            this.path = location.pathname.replace(/\/\//g, "/");
             this.hash = location.hash.slice(1);
             this.query = location.search.slice(1);
             this._getQuery_();
@@ -389,7 +389,7 @@ class URL {
             str.push(`:${this.port}`);
 
         if (this.path)
-            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`.replace("//", "/"));
+            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`.replace(/\/\//g, "/"));
 
         if (this.query)
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
@@ -543,7 +543,7 @@ class URL {
      * @readonly
      */
     get dir(): string {
-        return this.path.split("/").slice(0, -1).join("/") + "/";
+        return (this.path.split("/").slice(0, -1).join("/") + "/").replace(/\/\//g, "/");
     }
 
     /**
@@ -609,7 +609,7 @@ class URL {
 
         const
             fn_regex = /(file\:\/\/)(\/)*([A-Z]\:)*/g,
-            exe_url = ("/" + str.replace(fn_regex, "") + "/").replace(/\/\//g, "//");
+            exe_url = ("/" + str.replace(fn_regex, "") + "/").replace(/\/\//g, "/");
 
         return new URL(exe_url);
     }
@@ -671,7 +671,7 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 let POLYFILLED = false;
 
-URL.server = async function (root_dir: string = process.cwd()) {
+URL.server = async function (root_dir: string = process.cwd() + "/") {
 
     const
         fsr = (await import("fs")),
