@@ -199,7 +199,6 @@ class URL {
                     ? document.location.toString()
                     : null
     ): URL | null {
-
         const
             URL_old = new URL(URL_or_url_original),
             URL_new = new URL(URL_or_url_new);
@@ -208,21 +207,21 @@ class URL {
 
         if (URL_new.path[0] != "/") {
 
-            let a = URL_old.path.split("/");
-            let b = URL_new.path.split("/");
+            let old = URL_old.path.split("/").slice(0, -1);
+            let nw = URL_new.path.split("/");
 
-            if (b[0] == "..") a.splice(a.length - 1, 1);
-            for (let i = 0; i < b.length; i++) {
-                switch (b[i]) {
-                    case ".": a.splice(a.length - 1, 0);
+            for (let i = 0; i < nw.length; i++) {
+                switch (nw[i]) {
+                    case ".": old.splice(old.length - 1, 0);
+                        break;
                     case "..":
-                        a.splice(a.length - 1, 1);
+                        old.splice(old.length - 1, 1);
                         break;
                     default:
-                        a.push(b[i]);
+                        old.push(nw[i]);
                 }
             }
-            URL_new.path = a.join("/").replace(/\/\//g, "/");
+            URL_new.path = old.join("/").replace(/\/\//g, "/");
         }
         return URL_new;
     }
@@ -702,41 +701,34 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
                 URL_old = new URL(old_url),
                 URL_new = new URL(new_url);
 
-            if (!URL_new.IS_RELATIVE)
-                return URL_new;
-
-            const first_char = URL_new.path[0];
-
-            if (first_char == "/") {
-
-                //Prevent traversal outside the CWD for security purposes.
-                URL_new.path = path.join(process.cwd(), URL_new.path);
-
-                return URL_new;
-
-            } else if (!URL_new.IS_RELATIVE) {
+            if (!URL_new.IS_RELATIVE) {
                 //Attempt to resolve the file from the node_modules directories.
 
                 /**
+                 * This uses the classical node_modules lookup.
+                 * 
                  * TODO handle resolution of modules with a more general method. 
                  * See yarn Plug'n'Play: https://yarnpkg.com/features/pnp
                  */
 
                 const
                     base_path = URL_old.path.split("/").filter(s => s !== ".."),
-                    new_path = URL_new.path;
+                    new_path = URL_new + "";
 
                 let i = base_path.length;
 
-                while (i-- >= 0) {
+                while (i-- >= 1) {
                     try {
                         let search_path = "";
 
 
+
                         if (base_path[i] == "node_modules")
-                            search_path = path.join(base_path.slice(0, i + 1).join("/"), new_path);
-                        else
-                            search_path = path.join(base_path.slice(0, i + 1).join("/"), "node_modules", new_path);
+                            search_path = [...base_path.slice(0, i + 1), new_path].join("/");
+                        else {
+
+                            search_path = [...base_path.slice(0, i + 1), "node_modules", new_path].join("/");
+                        }
 
                         const stats = fsr.statSync(search_path);
 
@@ -747,6 +739,8 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
                         //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
                     }
                 }
+
+                return URL_new;
             }
 
             return cached(URL_new, URL_old);
