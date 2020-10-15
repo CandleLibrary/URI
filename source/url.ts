@@ -671,19 +671,17 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 let POLYFILLED = false;
 
 URL.server = async function (root_dir: string = process.cwd() + "/") {
-
-    const
-        fsr = (await import("fs")),
-        fs = fsr.promises,
-        path = (await import("path")),
-        http = (await import("http"));
-
-
     if (typeof (global) !== "undefined" && !POLYFILLED) {
 
-        URL.GLOBAL = new URL(root_dir);
-
         POLYFILLED = true;
+
+        const
+            fsr = (await import("fs")),
+            fs = fsr.promises,
+            path = (await import("path")),
+            http = (await import("http"));
+
+        URL.GLOBAL = new URL(root_dir);
 
         const
             //@ts-ignore
@@ -789,12 +787,10 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
 
 
             } else { //FileSystem Fetch
-                let
-                    p = path.resolve(process.cwd(), "" + url),
-                    d = await fs.readFile(p, "utf8");
-
-
                 try {
+                    let
+                        p = path.resolve(process.cwd(), "" + url),
+                        d = fsr.readFileSync(p, "utf8");
                     return {
                         status: 200,
                         text: () => {
