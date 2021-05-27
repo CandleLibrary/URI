@@ -3,7 +3,7 @@
  * Resolve relative paths
  */
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import assert from "assert";
 
 assert(URL.resolveRelative("./test", "/test/test/").path == "/test/test/test");

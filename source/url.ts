@@ -1,4 +1,4 @@
-import { addModuleToCFW } from "@candlefw/cfw";
+import { addModuleToCFW } from "@candlelib/candle";
 
 let fetch = (typeof window !== "undefined") ? window.fetch : null;
 

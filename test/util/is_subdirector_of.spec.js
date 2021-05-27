@@ -4,7 +4,7 @@
  * another path.
  */
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import assert from "assert";
 
 const
