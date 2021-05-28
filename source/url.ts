@@ -132,11 +132,7 @@ class URL {
      * A Global URL object that points to the current execution environment location.
      */
     static GLOBAL: URL;
-    /**
-     * Resource Cache
-     */
-    static RC: Map<string, any>;
-
+    
     /**
      * ONLY AVAILABLE ON SERVER
      * 
@@ -456,62 +452,33 @@ class URL {
 
 
     /**
-     * Fetch a string value of the remote resource. 
+     * Fetch a text string representation of the remote resource using HTTP. 
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. 
-     * If it is already cached, the cached result will be returned instead. 
-     * If `false`, a network fetch will always occur , and the result will not be cached.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
-    fetchText(ALLOW_CACHE = false): Promise<string> {
-
-        if (ALLOW_CACHE) {
-
-            let resource = URL.RC.get(this.path);
-
-            if (resource)
-                return new Promise((res) => {
-                    res(resource);
-                });
-        }
+    fetchText(): Promise<string> {
 
         return fetchLocalText(this).then(res => (URL.RC.set(this.path, res), res));
     }
 
     /**
-     * Fetch a JSON value of the remote resource. 
+     * Fetch a JSON object representation of the remote resource. 
      * Just uses path component of URL. Must be from the same origin.
-     * @param      {boolean}  [ALLOW_CACHE=true]  If `true`, the return string will be cached. If it is already cached, 
-     * that will be returned instead. If `false`, a network fetch will always occur , and the result will not be cached.
-     * @return     {Promise}  A promise object that resolves to a string of the fetched value.
+     * @return     {Promise}  A promise object that resolves to a JavaScript object of the fetched value.
      */
-    fetchJSON(ALLOW_CACHE = false): Promise<object> {
-
-        if (ALLOW_CACHE) {
-
-            let resource = URL.RC.get(this.path);
-
-            if (resource)
-                return new Promise((res) => {
-                    res(resource);
-                });
-        }
+    fetchJSON(): Promise<object> {
 
         return fetchLocalJSON(this).then(res => (URL.RC.set(this.path, res), res));
     }
 
     /**
-     * Cache a local resource at the value 
-     * @param    {object}  resource  The resource to store at this URL path value.
-     * @returns {boolean} `true` if a resource was already cached for this URL, false otherwise.
+     * Fetch an ArrayBuffer representation of the remote resource. 
+     * Just uses path component of URL. Must be from the same origin.
+     * @return     {Promise}  A promise object that resolves to an ArrayBuffer of the fetched value.
      */
-    cacheResource(resource) {
+    fetchBuffer(): Promise<object> {
 
-        let occupied = URL.RC.has(this.path);
-
-        URL.RC.set(this.path, resource);
-
-        return occupied;
+        return fetchLocalBuffer(this).then(res => (URL.RC.set(this.path, res), res));
     }
 
     submitForm(form_data) {
