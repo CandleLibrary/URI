@@ -53,6 +53,19 @@ function fetchLocalJSON(url, m = "cors"): Promise<object> {
     });
 }
 
+function fetchLocalBuffer(url, m = "cors"): Promise<ArrayBuffer> {
+    return new Promise((res, rej) => {
+        fetch(url + "", <RequestInit>Object.assign({
+            method: "GET"
+        }, getCORSModes(url))).then(r => {
+            if (r.status < 200 || r.status > 299)
+                r.text().then(rej);
+            else
+                r.arrayBuffer().then(res).catch(rej);
+        }).catch(e => rej(e));
+    });
+}
+
 function submitForm(url, form_data, m = "same-origin") {
     return new Promise((res, rej) => {
         var form;
