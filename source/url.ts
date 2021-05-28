@@ -628,6 +628,48 @@ class URL {
     static getCWDURL(): URL { return URL.GLOBAL; }
 
     /**
+     * Returns a new URL that has a relative
+     * path from this URL to the goal location.
+     */
+    getRelativeTo(goal: string | URL): URL {
+
+        const to = new URL(goal);
+
+        /* Find root direct in source. This is
+           this is the first directory with the 
+           same name in both paths from right
+           to left.
+        */
+        const pathA = this.dir.split("/").filter(s => !!s && s !== ".");
+        const pathB = to.dir.split("/").filter(s => !!s && s !== ".");
+        let indiceA = 0, indiceB = 0, max = pathA.length - 1;
+
+        for (let j = pathA.length - 1; j >= 0; j--) {
+            for (let i = pathB.length - 1; i >= 0; i--) {
+                let id = i + 1, jd = j + 1, length = 0;
+                while (--id >= 0 && --jd >= 0 && pathB[id] == pathA[jd]) length++;
+                if (length > 0 && length <= max && (j == 0 || to.IS_RELATIVE)) {
+                    max = length;
+                    indiceA = j + 1;
+                    indiceB = i + 1;
+                }
+            }
+        }
+
+        // If common name found then replace all elements in pathA with
+        // ../ that proceed this common name. Remove all elements in pathB
+        // that proceed common name. 
+        const new_path =
+            pathA.slice(indiceA).map(_ => "..")
+                .concat(pathB.slice(indiceB))
+                .concat(to.file).join("/");
+        to.path = new_path;
+
+
+        return to;
+    }
+
+    /**
      * Compares the path of the given url with its own path.
      * If own path is absolute then returns true if the arg url path is an leading substring of 
      * this path. 
