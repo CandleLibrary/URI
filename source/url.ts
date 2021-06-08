@@ -91,10 +91,12 @@ function submitForm(url, form_data, m = "same-origin") {
 }
 
 function submitJSON(url, json_data, m = "same-origin") {
+    const data = JSON.stringify(json_data);
     return new Promise((res, rej) => {
+        console.log(data);
         fetch(url + "", <RequestInit>Object.assign({
             method: "POST",
-            body: JSON.stringify(json_data),
+            body: data,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -108,6 +110,10 @@ function submitJSON(url, json_data, m = "same-origin") {
     });
 }
 
+
+//export interface ProtocolHandler {
+//    async request;
+//}
 
 
 /**
@@ -234,6 +240,15 @@ class URL {
         }
         return URL_new;
     }
+
+
+    /**
+     * Add a protocol handler to work with fetch requests. 
+     */
+    static addProtocolHandler() {
+
+    }
+
     /**
      * Create new URL object.
      * @param {URL | string | Location} [url=""] A string or another {URL} object that will populate the URL segment properties. 
@@ -692,16 +707,28 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 let POLYFILLED = false;
 
-URL.server = async function (root_dir: string = process.cwd() + "/") {
+URL.server = async function (root_dir: string) {
+    let fsr = null,
+        fs = null,
+        path = null,
+        http = null;
+
+    root_dir = root_dir || process.cwd() + "/";
+
+    try {
+        fsr = (await import("fs")),
+            fs = fsr.promises,
+            path = (await import("path")),
+            http = (await import("http"));
+    } catch (e) {
+        console.log("Unable to load URL.server. Is this package running on a browser?");
+        return;
+    }
+
     if (typeof (global) !== "undefined" && !POLYFILLED) {
 
         POLYFILLED = true;
 
-        const
-            fsr = (await import("fs")),
-            fs = fsr.promises,
-            path = (await import("path")),
-            http = (await import("http"));
 
         URL.GLOBAL = new URL(root_dir);
 
@@ -721,7 +748,8 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
                 URL_old = new URL(old_url),
                 URL_new = new URL(new_url);
 
-            if (!URL_new.IS_RELATIVE) {
+            if (!URL_new.IS_RELATIVE && (URL_new + "")[0] != "/") {
+
                 //Attempt to resolve the file from the node_modules directories.
 
                 /**
@@ -797,6 +825,11 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
                                         return {
                                             then: (f) => f(JSON.stringify(body))
                                         };
+                                    },
+                                    arrayBuffer: () => {
+                                        return {
+                                            then: (f) => f((Buffer.from(body)))
+                                        };
                                     }
 
                                 });
@@ -823,6 +856,12 @@ URL.server = async function (root_dir: string = process.cwd() + "/") {
                         json: () => {
                             return {
                                 then: (f) => f(JSON.parse(d))
+                            };
+                        },
+                        arrayBuffer: () => {
+                            const b = fsr.readFileSync(p);
+                            return {
+                                then: (f) => f((b.buffer))
                             };
                         }
                     };
