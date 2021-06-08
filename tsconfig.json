@@ -1,7 +1,7 @@
 {
     "compileOnSave": true,
     "files": [
-        "source/url.ts"
+        "source/uri.ts"
     ],
     "compilerOptions": {
         "types": [

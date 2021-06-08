@@ -2,8 +2,8 @@
     "name": "@candlelib/uri",
     "version": "0.1.5",
     "description": "URL/URI parser and basic request handler.",
-    "main": "./build/library/url.js",
-    "types": "./build/types/url.d.ts",
+    "main": "./build/library/uri.js",
+    "types": "./build/types/uri.d.ts",
     "type": "module",
     "scripts": {
         "test": "candle.cure ./test/**",
@@ -26,9 +26,6 @@
         "url": "https://github.com/CandleLibrary/uri/issues"
     },
     "homepage": "https://github.com/CandleLibrary/uri#readme",
-    "dependencies": {
-        "@candlelib/library": "0.0.1"
-    },
     "devDependencies": {
         "@candlelib/cure": "0.5.0"
     }

@@ -1,5 +1,3 @@
-import { addModuleToCFW } from "@candlelib/candle";
-
 let fetch = (typeof window !== "undefined") ? window.fetch : null;
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
@@ -16,8 +14,8 @@ const STOCK_LOCATION = {
     pathname: ""
 };
 
-function getCORSModes(url) {
-    const IS_CORS = (URL.GLOBAL.host !== url.host && !!url.host);
+function getCORSModes(uri) {
+    const IS_CORS = (URI.GLOBAL.host !== uri.host && !!uri.host);
     return {
         IS_CORS,
         mode: IS_CORS ? "cors" : "same-origin", // CORs not allowed
@@ -25,12 +23,12 @@ function getCORSModes(url) {
     };
 }
 
-function fetchLocalText(url, m = "cors"): Promise<string> {
+function fetchLocalText(uri, m = "cors"): Promise<string> {
 
     return new Promise((res, rej) => {
-        fetch(url + "", <RequestInit>Object.assign({
+        fetch(uri + "", <RequestInit>Object.assign({
             method: "GET",
-        }, getCORSModes(url))).then(r => {
+        }, getCORSModes(uri))).then(r => {
 
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
@@ -40,11 +38,11 @@ function fetchLocalText(url, m = "cors"): Promise<string> {
     });
 }
 
-function fetchLocalJSON(url, m = "cors"): Promise<object> {
+function fetchLocalJSON(uri, m = "cors"): Promise<object> {
     return new Promise((res, rej) => {
-        fetch(url + "", <RequestInit>Object.assign({
+        fetch(uri + "", <RequestInit>Object.assign({
             method: "GET"
-        }, getCORSModes(url))).then(r => {
+        }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
             else
@@ -53,11 +51,11 @@ function fetchLocalJSON(url, m = "cors"): Promise<object> {
     });
 }
 
-function fetchLocalBuffer(url, m = "cors"): Promise<ArrayBuffer> {
+function fetchLocalBuffer(uri, m = "cors"): Promise<ArrayBuffer> {
     return new Promise((res, rej) => {
-        fetch(url + "", <RequestInit>Object.assign({
+        fetch(uri + "", <RequestInit>Object.assign({
             method: "GET"
-        }, getCORSModes(url))).then(r => {
+        }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
             else
@@ -66,7 +64,7 @@ function fetchLocalBuffer(url, m = "cors"): Promise<ArrayBuffer> {
     });
 }
 
-function submitForm(url, form_data, m = "same-origin") {
+function submitForm(uri, form_data, m = "same-origin") {
     return new Promise((res, rej) => {
         var form;
 
@@ -78,10 +76,10 @@ function submitForm(url, form_data, m = "same-origin") {
                 form.append(name, form_data[name] + "");
         }
 
-        fetch(url + "", <RequestInit>Object.assign({
+        fetch(uri + "", <RequestInit>Object.assign({
             method: "POST",
             body: form
-        }, getCORSModes(url))).then(r => {
+        }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
             else
@@ -90,18 +88,18 @@ function submitForm(url, form_data, m = "same-origin") {
     });
 }
 
-function submitJSON(url, json_data, m = "same-origin") {
+function submitJSON(uri, json_data, m = "same-origin") {
     const data = JSON.stringify(json_data);
     return new Promise((res, rej) => {
         console.log(data);
-        fetch(url + "", <RequestInit>Object.assign({
+        fetch(uri + "", <RequestInit>Object.assign({
             method: "POST",
             body: data,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             }
-        }, getCORSModes(url))).then(r => {
+        }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
             else
@@ -117,10 +115,10 @@ function submitJSON(url, json_data, m = "same-origin") {
 
 
 /**
- *  Encapsulates a URL string and provides methods to manipulate the URL segments and send and retrieve data.
- * @type {URL}
+ *  Encapsulates a URI string and provides methods to manipulate the URI segments and send and retrieve data.
+ * @type {URI}
  */
-class URL {
+class URI {
     /**
      * @deprecated
      */
@@ -128,17 +126,17 @@ class URL {
     static polyfill: (dir?: string) => Promise<void>;
 
     /**
-     * Prepares URL to operate in a NodeJS environment.
+     * Prepares URI to operate in a NodeJS environment.
      * 
      * Call before using any IO methods. 
      */
     static server: (dir?: string) => Promise<void>;
     static simulate: () => void;
     /**
-     * A Global URL object that points to the current execution environment location.
+     * A Global URI object that points to the current execution environment location.
      */
-    static GLOBAL: URL;
-    
+    static GLOBAL: URI;
+
     /**
      * ONLY AVAILABLE ON SERVER
      * 
@@ -147,7 +145,7 @@ class URL {
     DOES_THIS_EXIST: () => Promise<boolean>;
 
     /**
-     * URL protocol segment
+     * URI protocol segment
      */
     protocol: string;
 
@@ -194,29 +192,29 @@ class URL {
     /** 
      * Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
      * 
-     * Fetch requests to matching URL will return the value string as a reply.
+     * Fetch requests to matching URI will return the value string as a reply.
      */
     static addResource: (n: string, v: string) => void;
 
     /**
-     * Resolves a URL relative to an original url. If the environment is NodeJS, 
+     * Resolves a URI relative to an original uri. If the environment is NodeJS, 
      * then node_module resolution may be used if the relative path
      * does not begin with a ./ or ../.
-     * @param {URL | string} URL_or_url_new 
-     * @param {URL | string} URL_or_url_original 
+     * @param {URI | string} URL_or_url_new 
+     * @param {URI | string} URL_or_url_original 
      */
     static resolveRelative(
-        URL_or_url_new: URL | string,
-        URL_or_url_original: URL | string
-            = (URL.GLOBAL)
-                ? URL.GLOBAL
+        URL_or_url_new: URI | string,
+        URL_or_url_original: URI | string
+            = (URI.GLOBAL)
+                ? URI.GLOBAL
                 : (typeof document != "undefined" && typeof document.location != "undefined")
                     ? document.location.toString()
                     : null
-    ): URL | null {
+    ): URI | null {
         const
-            URL_old = new URL(URL_or_url_original),
-            URL_new = new URL(URL_or_url_new);
+            URL_old = new URI(URL_or_url_original),
+            URL_new = new URI(URL_or_url_new);
 
         if (!(URL_old + "") || !(URL_new + "")) return null;
 
@@ -250,34 +248,34 @@ class URL {
     }
 
     /**
-     * Create new URL object.
-     * @param {URL | string | Location} [url=""] A string or another {URL} object that will populate the URL segment properties. 
-     * @param {boolean} [USE_LOCATION=false] If the url argument is blank or {undefined} then URL will pulled from the document's location.
+     * Create new URI object.
+     * @param {URI | string | Location} [uri=""] A string or another {URI} object that will populate the URI segment properties. 
+     * @param {boolean} [USE_LOCATION=false] If the uri argument is blank or {undefined} then URI will pulled from the document's location.
      */
-    constructor(url: string | URL | Location = "", USE_LOCATION = false) {
+    constructor(uri: string | URI | Location = "", USE_LOCATION = false) {
 
         let
             IS_STRING = true,
             IS_LOCATION = false,
             location = (typeof (document) !== "undefined") ? document.location : STOCK_LOCATION;
 
-        if (typeof (Location) !== "undefined" && url instanceof Location) {
-            location = url;
-            url = "";
+        if (typeof (Location) !== "undefined" && uri instanceof Location) {
+            location = uri;
+            uri = "";
             IS_LOCATION = true;
         }
 
-        if ((!url || typeof (url) != "string") && !(<unknown>url instanceof URL)) {
+        if ((!uri || typeof (uri) != "string") && !(<unknown>uri instanceof URI)) {
             IS_STRING = false;
 
             IS_LOCATION = true;
 
-            if (URL.GLOBAL && USE_LOCATION)
-                return URL.GLOBAL;
+            if (URI.GLOBAL && USE_LOCATION)
+                return URI.GLOBAL;
         }
 
         /**
-         * URL protocol
+         * URI protocol
          */
         this.protocol = "";
 
@@ -292,22 +290,22 @@ class URL {
         this.pwd = "";
 
         /**
-         * URL hostname
+         * URI hostname
          */
         this.host = "";
 
         /**
-         * URL network port number.
+         * URI network port number.
          */
         this.port = 0;
 
         /**
-         * URL resource path
+         * URI resource path
          */
         this.path = "";
 
         /**
-         * URL query string.
+         * URI query string.
          */
         this.query = "";
 
@@ -322,21 +320,21 @@ class URL {
         this.map = null;
 
 
-        if (url instanceof URL) {
-            this.protocol = url.protocol;
-            this.user = url.user;
-            this.pwd = url.pwd;
-            this.host = url.host;
-            this.port = url.port;
-            this.path = url.path.replace(/\/\//g, "/");
-            this.query = url.query;
-            this.hash = url.hash;
+        if (uri instanceof URI) {
+            this.protocol = uri.protocol;
+            this.user = uri.user;
+            this.pwd = uri.pwd;
+            this.host = uri.host;
+            this.port = uri.port;
+            this.path = uri.path.replace(/\/\//g, "/");
+            this.query = uri.query;
+            this.hash = uri.hash;
         } else if (IS_STRING) {
-            let part = (<string>url).match(uri_reg_ex);
+            let part = (<string>uri).match(uri_reg_ex);
 
             //If the complete string is not matched than we are dealing with something other 
-            //than a pure URL. Thus, no object is returned. 
-            if (part[0] !== url) return null;
+            //than a pure URI. Thus, no object is returned. 
+            if (part[0] !== uri) return null;
 
             this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
             this.user = part[2] || "";
@@ -357,8 +355,8 @@ class URL {
             this._getQuery_();
 
             if (USE_LOCATION) {
-                URL.GLOBAL = this;
-                return URL.GLOBAL;
+                URI.GLOBAL = this;
+                return URI.GLOBAL;
             }
         }
         this._getQuery_();
@@ -379,19 +377,19 @@ class URL {
         }
     }
     /**
-     * Create new URL with the path changed to match the argument
+     * Create new URI with the path changed to match the argument
      * 
      * @param path - New path 
-     * @returns {URL}
+     * @returns {URI}
      */
-    setPath(path: string): URL {
+    setPath(path: string): URI {
 
         this.path = path;
 
         return this;
     }
     /**
-    *  Changes the document's location to match the URL.
+    *  Changes the document's location to match the URI.
     */
     setLocation() {
         history.replaceState({}, "replaced state", `${this}`);
@@ -468,32 +466,32 @@ class URL {
 
     /**
      * Fetch a text string representation of the remote resource using HTTP. 
-     * Just uses path component of URL. Must be from the same origin.
+     * Just uses path component of URI. Must be from the same origin.
      * @return     {Promise}  A promise object that resolves to a string of the fetched value.
      */
     fetchText(): Promise<string> {
 
-        return fetchLocalText(this).then(res => (URL.RC.set(this.path, res), res));
+        return fetchLocalText(this).then(res => (URI.RC.set(this.path, res), res));
     }
 
     /**
      * Fetch a JSON object representation of the remote resource. 
-     * Just uses path component of URL. Must be from the same origin.
+     * Just uses path component of URI. Must be from the same origin.
      * @return     {Promise}  A promise object that resolves to a JavaScript object of the fetched value.
      */
     fetchJSON(): Promise<object> {
 
-        return fetchLocalJSON(this).then(res => (URL.RC.set(this.path, res), res));
+        return fetchLocalJSON(this).then(res => (URI.RC.set(this.path, res), res));
     }
 
     /**
      * Fetch an ArrayBuffer representation of the remote resource. 
-     * Just uses path component of URL. Must be from the same origin.
+     * Just uses path component of URI. Must be from the same origin.
      * @return     {Promise}  A promise object that resolves to an ArrayBuffer of the fetched value.
      */
     fetchBuffer(): Promise<object> {
 
-        return fetchLocalBuffer(this).then(res => (URL.RC.set(this.path, res), res));
+        return fetchLocalBuffer(this).then(res => (URI.RC.set(this.path, res), res));
     }
 
     submitForm(form_data) {
@@ -505,14 +503,14 @@ class URL {
     }
 
     /**
-     * @deprecated Goes to the current URL.
+     * @deprecated Goes to the current URI.
      */
     goto() {
         return;
-        //let url = this.toString();
-        //history.pushState({}, "ignored title", url);
+        //let uri = this.toString();
+        //history.pushState({}, "ignored title", uri);
         //window.onpopstate();
-        //URL.GLOBAL = this;
+        //URI.GLOBAL = this;
     }
 
     /**
@@ -525,7 +523,7 @@ class URL {
 
     /**
      * Name of the file - extension in the path
-     * of the URL path
+     * of the URI path
      * @readonly
      */
     get filename(): string {
@@ -549,7 +547,7 @@ class URL {
     }
 
     /**
-     * Alias of URL~toString()
+     * Alias of URI~toString()
      * @readonly
      */
     get href(): string {
@@ -578,7 +576,7 @@ class URL {
     }
 
     /**
-     * Alias of URL~query
+     * Alias of URI~query
      * @readonly
      */
     get search(): string {
@@ -586,7 +584,7 @@ class URL {
     }
 
     /**
-     * True if the path portion of the URL is a relative path. 
+     * True if the path portion of the URI is a relative path. 
      * 
      * Path must begin with `../` or `./` to be considered relative.
      * 
@@ -597,7 +595,7 @@ class URL {
             || this.path.slice(0, 2) == "./";
     }
 
-    static getEXEURL(imp: ImportMeta): URL {
+    static getEXEURL(imp: ImportMeta): URI {
 
         let str = imp.url ?? "";
 
@@ -605,17 +603,17 @@ class URL {
             fn_regex = /(file\:\/\/)(\/)*([A-Z]\:)*/g,
             exe_url = ("/" + str.replace(fn_regex, "") + "/").replace(/\/\//g, "/");
 
-        return new URL(exe_url);
+        return new URI(exe_url);
     }
-    static getCWDURL(): URL { return URL.GLOBAL; }
+    static getCWDURL(): URI { return URI.GLOBAL; }
 
     /**
-     * Returns a new URL that has a relative
-     * path from this URL to the goal location.
+     * Returns a new URI that has a relative
+     * path from this URI to the goal location.
      */
-    getRelativeTo(goal: string | URL): URL {
+    getRelativeTo(goal: string | URI): URI {
 
-        const to = new URL(goal);
+        const to = new URI(goal);
 
         /* Find root direct in source. This is
            this is the first directory with the 
@@ -652,16 +650,16 @@ class URL {
     }
 
     /**
-     * Compares the path of the given url with its own path.
-     * If own path is absolute then returns true if the arg url path is an leading substring of 
+     * Compares the path of the given uri with its own path.
+     * If own path is absolute then returns true if the arg uri path is an leading substring of 
      * this path. 
      */
-    isSUBDIRECTORY_OF(candidate_parent: URL): boolean {
+    isSUBDIRECTORY_OF(candidate_parent: URI): boolean {
 
         if (candidate_parent.IS_RELATIVE) return false;
 
         const own_path = (this.IS_RELATIVE
-            ? URL.resolveRelative(this, candidate_parent)
+            ? URI.resolveRelative(this, candidate_parent)
             : this).dir.split("/").slice(0, -1),
             candidate_path = candidate_parent.dir.split("/").slice(0, -1);
 
@@ -676,38 +674,38 @@ class URL {
 /**
  * The fetched resource cache.
  */
-URL.RC = new Map();
+URI.RC = new Map();
 
 /**
- * The Default Global URL object. 
+ * The Default Global URI object. 
  */
-URL.GLOBAL = (typeof location != "undefined") ? new URL(location) : new URL;
+URI.GLOBAL = (typeof location != "undefined") ? new URI(location) : new URI;
 
 
 let SIMDATA = null;
 
 /** Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
-URL.simulate = function () {
+URI.simulate = function () {
     SIMDATA = new Map;
-    URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
-    URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
+    URI.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
+    URI.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
 };
 
-URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+URI.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
 
 type URLPolyfilledGlobal = NodeJS.Global & {
     document: {
-        location: URL;
+        location: URI;
     };
-    location: URL;
+    location: URI;
 
-    fetch: (url: string, data: any) => Promise<any>;
+    fetch: (uri: string, data: any) => Promise<any>;
 
 };
 
 let POLYFILLED = false;
 
-URL.server = async function (root_dir: string) {
+URI.server = async function (root_dir: string) {
     let fsr = null,
         fs = null,
         path = null,
@@ -721,7 +719,7 @@ URL.server = async function (root_dir: string) {
             path = (await import("path")),
             http = (await import("http"));
     } catch (e) {
-        console.log("Unable to load URL.server. Is this package running on a browser?");
+        console.log("Unable to load URI.server. Is this package running on a browser?");
         return;
     }
 
@@ -730,23 +728,23 @@ URL.server = async function (root_dir: string) {
         POLYFILLED = true;
 
 
-        URL.GLOBAL = new URL(root_dir);
+        URI.GLOBAL = new URI(root_dir);
 
         const
             //@ts-ignore
             g: URLPolyfilledGlobal = <unknown>global;
 
         g.document = g.document || <URLPolyfilledGlobal>{};
-        g.document.location = URL.GLOBAL;
-        g.location = URL.GLOBAL;
+        g.document.location = URI.GLOBAL;
+        g.location = URI.GLOBAL;
 
-        const cached = URL.resolveRelative;
+        const cached = URI.resolveRelative;
 
-        URL.resolveRelative = function (new_url, old_url = URL.GLOBAL) {
+        URI.resolveRelative = function (new_url, old_url = URI.GLOBAL) {
 
             let
-                URL_old = new URL(old_url),
-                URL_new = new URL(new_url);
+                URL_old = new URI(old_url),
+                URL_new = new URI(new_url);
 
             if (!URL_new.IS_RELATIVE && (URL_new + "")[0] != "/") {
 
@@ -781,7 +779,7 @@ URL.server = async function (root_dir: string) {
                         const stats = fsr.statSync(search_path);
 
                         if (stats)
-                            return new URL(search_path);
+                            return new URI(search_path);
 
                     } catch (e) {
                         //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
@@ -797,13 +795,13 @@ URL.server = async function (root_dir: string) {
         /**
          * Global `fetch` polyfill - basic support
          */
-        fetch = g.fetch = async (url, data): Promise<any> => {
+        fetch = g.fetch = async (uri, data): Promise<any> => {
 
             if (data.IS_CORS) { // HTTP Fetch
                 return new Promise((res, rej) => {
                     try {
 
-                        http.get(url, data, req => {
+                        http.get(uri, data, req => {
 
                             let body = "";
 
@@ -844,7 +842,7 @@ URL.server = async function (root_dir: string) {
             } else { //FileSystem Fetch
                 try {
                     let
-                        p = path.resolve(process.cwd(), "" + url),
+                        p = path.resolve(process.cwd(), "" + uri),
                         d = fsr.readFileSync(p, "utf8");
                     return {
                         status: 200,
@@ -871,20 +869,16 @@ URL.server = async function (root_dir: string) {
             }
         };
 
-        URL.prototype.DOES_THIS_EXIST = async function () {
+        URI.prototype.DOES_THIS_EXIST = async function () {
             if (!this.IS_RELATIVE)
                 return !!(await fs.stat(this.toString()).catch(e => false));
             return false;
         };
     }
 };
-/**
- * @deprecated in favor of URL.server()
- */
-URL.polyfill = URL.server;
-Object.freeze(URL.RC);
-Object.seal(URL);
 
-addModuleToCFW(URL, "url");
+Object.freeze(URI.RC);
 
-export default URL;
+Object.seal(URI);
+
+export default URI;
