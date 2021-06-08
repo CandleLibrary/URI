@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@candlefw/wind@^0.4.1-dev":
+"@candlelib/wind@^0.4.1-dev":
   version "0.4.1-dev"
-  resolved "https://registry.yarnpkg.com/@candlefw/wind/-/wind-0.4.1-dev.tgz#3095972dc674e934a8759b7a36d51f867bbe3d7b"
+  resolved "https://registry.yarnpkg.com/@candlelib/wind/-/wind-0.4.1-dev.tgz#3095972dc674e934a8759b7a36d51f867bbe3d7b"
   integrity sha512-3/5/RsPsY9GXpTsAak1O6uMFoLpqmz+CrHQgsCmF3PGLlcmUUJPoJCsA3XTC4BpOT0O+0y+xDNm3V71hbB/c9w==
 
 "@rollup/plugin-node-resolve@7.1.1":

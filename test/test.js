@@ -7,7 +7,7 @@ const assert = chai.assert;
 if (typeof (Location) == "undefined") global.Location = class { };
 
 
-'CandleFW URL Tests'; "#";
+'CandleLibrary URL Tests'; "#";
 await URL.polyfill();
 
 "Handles different incomplete forms of URIs"; "#";

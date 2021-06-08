@@ -1,13 +1,13 @@
 {
     "name": "@candlelib/url",
-  "version": "0.1.5",
+    "version": "0.1.5",
     "description": "URL/URI parser and basic request handler.",
     "main": "./build/library/url.js",
     "types": "./build/types/url.d.ts",
     "type": "module",
     "scripts": {
-        "test": "cfw.test ./test/**",
-        "test.watch": "cfw.test -w ./test/**",
+        "test": "candle.cure ./test/**",
+        "test.watch": "candle.cure -w ./test/**",
         "build": "./bin/cfw_test.js ./load_test.spec.js",
         "prepublish": "tsc -p ./tsconfig.json && yarn test"
     },
