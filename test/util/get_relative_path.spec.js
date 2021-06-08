@@ -3,7 +3,7 @@
  * Utility that creates relative path to another resource
  */
 
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import assert from "assert";
 
 const

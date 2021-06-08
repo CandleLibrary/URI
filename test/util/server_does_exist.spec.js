@@ -5,7 +5,7 @@
  * a file. Cannot be a relative path. Only valid server side.
  */
 
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import assert from "assert";
 
 const

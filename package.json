@@ -1,5 +1,5 @@
 {
-    "name": "@candlelib/url",
+    "name": "@candlelib/uri",
     "version": "0.1.5",
     "description": "URL/URI parser and basic request handler.",
     "main": "./build/library/url.js",
