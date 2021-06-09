@@ -11,8 +11,8 @@ import assert from "assert";
 const
     urlCWDshouldExist = URL.getCWDURL(),
     urlRelativeFileShouldNotExist = new URL("./test_dir/test_file.txt"),
-    urlTestDirShouldExist = new URL.resolveRelative("./test_dir/"),
-    urlTestFileShouldExist = new URL.resolveRelative("./test_dir/test_file.txt"),
+    urlTestDirShouldExist = new URL.resolveRelative("./test/util/test_dir/"),
+    urlTestFileShouldExist = new URL.resolveRelative("./test/util/test_dir/test_file.txt"),
     urlTestFileShouldNotExist = new URL("./test_dir/test_file_no_go.txt");
 
 assert(await urlCWDshouldExist.DOES_THIS_EXIST() == true);
