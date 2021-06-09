@@ -746,7 +746,7 @@ URI.server = async function (root_dir: string) {
                 URL_old = new URI(old_url),
                 URL_new = new URI(new_url);
 
-            if (!URL_new.IS_RELATIVE && (URL_new + "")[0] != "/") {
+            if (!URL_new.IS_RELATIVE && (URL_new.path + "")[0] != "/") {
 
                 //Attempt to resolve the file from the node_modules directories.
 
