@@ -489,7 +489,7 @@ class URI {
      * Just uses path component of URI. Must be from the same origin.
      * @return     {Promise}  A promise object that resolves to an ArrayBuffer of the fetched value.
      */
-    fetchBuffer(): Promise<object> {
+    fetchBuffer(): Promise<ArrayBuffer> {
 
         return fetchLocalBuffer(this).then(res => (URI.RC.set(this.path, res), res));
     }
@@ -687,7 +687,9 @@ let SIMDATA = null;
 /** Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
 URI.simulate = function () {
     SIMDATA = new Map;
+    //@ts-ignore
     URI.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
+    //@ts-ignore
     URI.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
 };
 
@@ -842,22 +844,23 @@ URI.server = async function (root_dir: string) {
             } else { //FileSystem Fetch
                 try {
                     let
-                        p = path.resolve(process.cwd(), "" + uri),
-                        d = fsr.readFileSync(p, "utf8");
+                        p = path.resolve(process.cwd(), "" + uri);
+
+                    const b = await fs.readFile(p);
+
                     return {
                         status: 200,
                         text: () => {
                             return {
-                                then: (f) => f(d)
+                                then: (f) => f(b.toString("utf8"))
                             };
                         },
                         json: () => {
                             return {
-                                then: (f) => f(JSON.parse(d))
+                                then: (f) => f(JSON.parse(b.toString("utf8")))
                             };
                         },
                         arrayBuffer: () => {
-                            const b = fsr.readFileSync(p);
                             return {
                                 then: (f) => f((b.buffer))
                             };
