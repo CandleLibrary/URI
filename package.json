@@ -9,7 +9,7 @@
         "test": "candle.cure ./test/",
         "test.watch": "candle.cure -w ./test/**",
         "build": "./bin/cfw_test.js ./load_test.spec.js",
-        "prepublish": "rm -rf ./build && tsc & sleep 5"
+        "prepublishOnly": "rm -rf ./build && tsc & sleep 5"
     },
     "repository": {
         "type": "git",
