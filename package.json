@@ -15,6 +15,12 @@
         "type": "git",
         "url": "git+https://github.com/CandleLibrary/uri.git"
     },
+    "files": [
+        "/build",
+        "/README.md",
+        "/CHANGELOG.md",
+        "/LICENSE"
+    ],
     "keywords": [
         "URL",
         "URI",
