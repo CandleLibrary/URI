@@ -1,4 +1,4 @@
-let fetch = (typeof window !== "undefined") ? window.fetch : null;
+let fetch_reference = (typeof window !== "undefined") ? window.fetch : null;
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
@@ -26,7 +26,7 @@ function getCORSModes(uri) {
 function fetchLocalText(uri, m = "cors"): Promise<string> {
 
     return new Promise((res, rej) => {
-        fetch(uri + "", <RequestInit>Object.assign({
+        fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "GET",
         }, getCORSModes(uri))).then(r => {
 
@@ -40,7 +40,7 @@ function fetchLocalText(uri, m = "cors"): Promise<string> {
 
 function fetchLocalJSON(uri, m = "cors"): Promise<object> {
     return new Promise((res, rej) => {
-        fetch(uri + "", <RequestInit>Object.assign({
+        fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "GET"
         }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
@@ -53,7 +53,7 @@ function fetchLocalJSON(uri, m = "cors"): Promise<object> {
 
 function fetchLocalBuffer(uri, m = "cors"): Promise<ArrayBuffer> {
     return new Promise((res, rej) => {
-        fetch(uri + "", <RequestInit>Object.assign({
+        fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "GET"
         }, getCORSModes(uri))).then(r => {
             if (r.status < 200 || r.status > 299)
@@ -76,7 +76,7 @@ function submitForm(uri, form_data, m = "same-origin") {
                 form.append(name, form_data[name] + "");
         }
 
-        fetch(uri + "", <RequestInit>Object.assign({
+        fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "POST",
             body: form
         }, getCORSModes(uri))).then(r => {
@@ -92,7 +92,7 @@ function submitJSON(uri, json_data, m = "same-origin") {
     const data = JSON.stringify(json_data);
     return new Promise((res, rej) => {
         console.log(data);
-        fetch(uri + "", <RequestInit>Object.assign({
+        fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "POST",
             body: data,
             headers: {
@@ -237,6 +237,15 @@ class URI {
             URL_new.path = old.join("/").replace(/\/\//g, "/");
         }
         return URL_new;
+    }
+
+    /**
+     * Fetch resource using the Fetch API 
+     * 
+     * https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+     */
+    async fetch(init?: RequestInit): Promise<Response> {
+        return fetch_reference(this + "", init);
     }
 
 
@@ -601,7 +610,7 @@ class URI {
 
         const
             fn_regex = /(file\:\/\/)(\/)*([A-Z]\:)*/g,
-            exe_url = ("/" + str.replace(fn_regex, "") + "/").replace(/\/\//g, "/");
+            exe_url = ("/" + str.replace(fn_regex, "")).replace(/\/\//g, "/");
 
         return new URI(exe_url);
     }
@@ -716,7 +725,7 @@ URI.server = async function (root_dir: string) {
     root_dir = root_dir || process.cwd() + "/";
 
     try {
-        fsr = (await import("fs")),
+        fsr = await import("fs"),
             fs = fsr.promises,
             path = (await import("path")),
             http = (await import("http"));
@@ -797,9 +806,9 @@ URI.server = async function (root_dir: string) {
         /**
          * Global `fetch` polyfill - basic support
          */
-        fetch = g.fetch = async (uri, data): Promise<any> => {
+        fetch_reference = g.fetch = async (uri, data: ResponseInit & { IS_CORS: boolean; }): Promise<Response> => {
 
-            if (data.IS_CORS) { // HTTP Fetch
+            if (data?.IS_CORS) { // HTTP Fetch
                 return new Promise((res, rej) => {
                     try {
 
@@ -813,27 +822,7 @@ URI.server = async function (root_dir: string) {
                                 body += d;
                             });
 
-                            req.on("end", () => {
-                                res({
-                                    status: 200,
-                                    text: () => {
-                                        return {
-                                            then: (f) => f(body)
-                                        };
-                                    },
-                                    json: () => {
-                                        return {
-                                            then: (f) => f(JSON.stringify(body))
-                                        };
-                                    },
-                                    arrayBuffer: () => {
-                                        return {
-                                            then: (f) => f((Buffer.from(body)))
-                                        };
-                                    }
-
-                                });
-                            });
+                            req.on("end", () => res(createResponse(body, uri + "")));
                         });
                     } catch (e) {
                         rej(e);
@@ -846,26 +835,9 @@ URI.server = async function (root_dir: string) {
                     let
                         p = path.resolve(process.cwd(), "" + uri);
 
-                    const b = await fs.readFile(p);
+                    const body = await fs.readFile(p);
 
-                    return {
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(b.toString("utf8"))
-                            };
-                        },
-                        json: () => {
-                            return {
-                                then: (f) => f(JSON.parse(b.toString("utf8")))
-                            };
-                        },
-                        arrayBuffer: () => {
-                            return {
-                                then: (f) => f((b.buffer))
-                            };
-                        }
-                    };
+                    return createResponse(body, uri + "");
                 } catch (err) {
                     throw err;
                 }
@@ -885,3 +857,32 @@ Object.freeze(URI.RC);
 Object.seal(URI);
 
 export default URI;
+
+function createResponse(body: string | Buffer, url: string): Response {
+    return {
+        get type() { return <ResponseType>"basic"; },
+        get ok() { return true; },
+        get bodyUsed() { return true; },
+        get redirected() { return false; },
+        get status() { return 200; },
+        get statusText() { return "200"; },
+        get headers() { return null; },
+        get body() { return Buffer.from(body); },
+        get trailer() { return (async () => null)(); };
+
+        get url() { return url; },
+
+        clone() { return createResponse(body, url); },
+
+        formData: () => null,
+
+        text: async () => body instanceof Buffer ? body.toString("utf8") : b,
+
+        json: async () => JSON.parse(body instanceof Buffer ? body.toString("utf8") : b),
+
+        arrayBuffer: async () => body instanceof Buffer ? body.buffer : Buffer.from(body),
+
+        blob: async () => body instanceof Buffer ? body.buffer : Buffer.from(body),
+
+    };
+}
