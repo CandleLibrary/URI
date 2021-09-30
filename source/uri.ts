@@ -91,7 +91,7 @@ function submitForm(uri, form_data, m = "same-origin") {
 function submitJSON(uri, json_data, m = "same-origin") {
     const data = JSON.stringify(json_data);
     return new Promise((res, rej) => {
-        console.log(data);
+
         fetch_reference(uri + "", <RequestInit>Object.assign({
             method: "POST",
             body: data,
@@ -523,7 +523,7 @@ class URI {
     }
 
     /**
-     * Name of the file + extension in the path
+     * Name of the file plus the extension in the path
      * @readonly
      */
     get file() {
@@ -531,7 +531,7 @@ class URI {
     }
 
     /**
-     * Name of the file - extension in the path
+     * Name of the filename minus the extension in the path
      * of the URI path
      * @readonly
      */
@@ -608,9 +608,12 @@ class URI {
 
         let str = imp.url ?? "";
 
-        const
-            fn_regex = /(file\:\/\/)(\/)*([A-Z]\:)*/g,
-            exe_url = ("/" + str.replace(fn_regex, "")).replace(/\/\//g, "/");
+        const exe_url = new URI(str);
+
+        if (exe_url.protocol == "file") {
+            exe_url.protocol = "";
+        } else if (exe_url.protocol != "")
+            return exe_url;
 
         return new URI(exe_url);
     }
@@ -716,141 +719,145 @@ type URLPolyfilledGlobal = NodeJS.Global & {
 
 let POLYFILLED = false;
 
-URI.server = async function (root_dir: string) {
-    let fsr = null,
-        fs = null,
-        path = null,
-        http = null;
+URI.server = (
+    typeof globalThis["process"] == "undefined" ?
+        async () => { }
+        :
+        async function (root_dir: string) {
+            let fsr = null,
+                fs = null,
+                path = null,
+                http = null;
 
-    root_dir = root_dir || process.cwd() + "/";
+            root_dir = root_dir || process.cwd() + "/";
 
-    try {
-        fsr = await import("fs"),
-            fs = fsr.promises,
-            path = (await import("path")),
-            http = (await import("http"));
-    } catch (e) {
-        console.log("Unable to load URI.server. Is this package running on a browser?");
-        return;
-    }
+            try {
+                fsr = await import("fs"),
+                    fs = fsr.promises,
+                    path = (await import("path")),
+                    http = (await import("http"));
+            } catch (e) {
+                console.log("Unable to load URI.server. Is this package running on a browser?");
+                return;
+            }
 
-    if (typeof (global) !== "undefined" && !POLYFILLED) {
+            if (typeof (global) !== "undefined" && !POLYFILLED) {
 
-        POLYFILLED = true;
+                POLYFILLED = true;
 
 
-        URI.GLOBAL = new URI(root_dir);
-
-        const
-            //@ts-ignore
-            g: URLPolyfilledGlobal = <unknown>global;
-
-        g.document = g.document || <URLPolyfilledGlobal>{};
-        g.document.location = URI.GLOBAL;
-        g.location = URI.GLOBAL;
-
-        const cached = URI.resolveRelative;
-
-        URI.resolveRelative = function (new_url, old_url = URI.GLOBAL) {
-
-            let
-                URL_old = new URI(old_url),
-                URL_new = new URI(new_url);
-
-            if (!URL_new.IS_RELATIVE && (URL_new.path + "")[0] != "/") {
-
-                //Attempt to resolve the file from the node_modules directories.
-
-                /**
-                 * This uses the classical node_modules lookup.
-                 * 
-                 * TODO handle resolution of modules with a more general method. 
-                 * See yarn Plug'n'Play: https://yarnpkg.com/features/pnp
-                 */
+                URI.GLOBAL = new URI(root_dir);
 
                 const
-                    base_path = URL_old.path.split("/").filter(s => s !== ".."),
-                    new_path = URL_new + "";
+                    //@ts-ignore
+                    g: URLPolyfilledGlobal = <unknown>global;
 
-                let i = base_path.length;
+                g.document = g.document || <URLPolyfilledGlobal>{};
+                g.document.location = URI.GLOBAL;
+                g.location = URI.GLOBAL;
 
-                while (i-- >= 1) {
-                    try {
-                        let search_path = "";
+                const cached = URI.resolveRelative;
+
+                URI.resolveRelative = function (new_url, old_url = URI.GLOBAL) {
+
+                    let
+                        URL_old = new URI(old_url),
+                        URL_new = new URI(new_url);
+
+                    if (!URL_new.IS_RELATIVE && (URL_new.path + "")[0] != "/") {
+
+                        //Attempt to resolve the file from the node_modules directories.
+
+                        /**
+                         * This uses the classical node_modules lookup.
+                         * 
+                         * TODO handle resolution of modules with a more general method. 
+                         * See yarn Plug'n'Play: https://yarnpkg.com/features/pnp
+                         */
+
+                        const
+                            base_path = URL_old.path.split("/").filter(s => s !== ".."),
+                            new_path = URL_new + "";
+
+                        let i = base_path.length;
+
+                        while (i-- >= 1) {
+                            try {
+                                let search_path = "";
 
 
 
-                        if (base_path[i] == "node_modules")
-                            search_path = [...base_path.slice(0, i + 1), new_path].join("/");
-                        else {
+                                if (base_path[i] == "node_modules")
+                                    search_path = [...base_path.slice(0, i + 1), new_path].join("/");
+                                else {
 
-                            search_path = [...base_path.slice(0, i + 1), "node_modules", new_path].join("/");
+                                    search_path = [...base_path.slice(0, i + 1), "node_modules", new_path].join("/");
+                                }
+
+                                const stats = fsr.statSync(search_path);
+
+                                if (stats)
+                                    return new URI(search_path);
+
+                            } catch (e) {
+                                //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
+                            }
                         }
 
-                        const stats = fsr.statSync(search_path);
-
-                        if (stats)
-                            return new URI(search_path);
-
-                    } catch (e) {
-                        //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
+                        return URL_new;
                     }
-                }
 
-                return URL_new;
-            }
+                    return cached(URL_new, URL_old);
+                };
 
-            return cached(URL_new, URL_old);
-        };
+                /**
+                 * Global `fetch` polyfill - basic support
+                 */
+                fetch_reference = g.fetch = async (uri, data: ResponseInit & { IS_CORS: boolean; }): Promise<Response> => {
 
-        /**
-         * Global `fetch` polyfill - basic support
-         */
-        fetch_reference = g.fetch = async (uri, data: ResponseInit & { IS_CORS: boolean; }): Promise<Response> => {
+                    if (data?.IS_CORS) { // HTTP Fetch
+                        return new Promise((res, rej) => {
+                            try {
 
-            if (data?.IS_CORS) { // HTTP Fetch
-                return new Promise((res, rej) => {
-                    try {
+                                http.get(uri, data, req => {
 
-                        http.get(uri, data, req => {
+                                    let body = "";
 
-                            let body = "";
+                                    req.setEncoding('utf8');
 
-                            req.setEncoding('utf8');
+                                    req.on("data", d => {
+                                        body += d;
+                                    });
 
-                            req.on("data", d => {
-                                body += d;
-                            });
-
-                            req.on("end", () => res(createResponse(body, uri + "")));
+                                    req.on("end", () => res(createResponse(body, uri + "")));
+                                });
+                            } catch (e) {
+                                rej(e);
+                            }
                         });
-                    } catch (e) {
-                        rej(e);
+
+
+                    } else { //FileSystem Fetch
+                        try {
+                            let
+                                p = path.resolve(process.cwd(), "" + uri);
+
+                            const body = await fs.readFile(p);
+
+                            return createResponse(body, uri + "");
+                        } catch (err) {
+                            throw err;
+                        }
                     }
-                });
+                };
 
-
-            } else { //FileSystem Fetch
-                try {
-                    let
-                        p = path.resolve(process.cwd(), "" + uri);
-
-                    const body = await fs.readFile(p);
-
-                    return createResponse(body, uri + "");
-                } catch (err) {
-                    throw err;
-                }
+                URI.prototype.DOES_THIS_EXIST = async function () {
+                    if (!this.IS_RELATIVE)
+                        return !!(await fs.stat(this.toString()).catch(e => false));
+                    return false;
+                };
             }
-        };
-
-        URI.prototype.DOES_THIS_EXIST = async function () {
-            if (!this.IS_RELATIVE)
-                return !!(await fs.stat(this.toString()).catch(e => false));
-            return false;
-        };
-    }
-};
+        });
 
 Object.freeze(URI.RC);
 
@@ -868,7 +875,7 @@ function createResponse(body: string | Buffer, url: string): Response {
         get statusText() { return "200"; },
         get headers() { return null; },
         get body() { return Buffer.from(body); },
-        get trailer() { return (async () => null)(); };
+        get trailer() { return (async () => null)(); },
 
         get url() { return url; },
 
