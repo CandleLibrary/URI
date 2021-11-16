@@ -1,6 +1,13 @@
 let fetch_reference = (typeof window !== "undefined") ? window.fetch : null;
 
 const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
+const root_reg = /^\/|^\w+\:|^\\\\/;
+const relative_regex = /^(\.+\/)|^w/;
+const double_forward_regex = /\/\//g;
+
+const isPOSIX = (()=>{
+    return process.platform !== "win32"
+})()
 
 const STOCK_LOCATION = {
     protocol: "",
@@ -108,11 +115,13 @@ function submitJSON(uri, json_data, m = "same-origin") {
     });
 }
 
+function toWindowsPath(path:string):string{
+    return path.replace(/\//g, "\\");
+}
 
-//export interface ProtocolHandler {
-//    async request;
-//}
-
+function toPosixPath(path:string):string{
+    return path.replace(/\\/g, "/");
+}
 
 /**
  *  Encapsulates a URI string and provides methods to manipulate the URI segments and send and retrieve data.
@@ -131,11 +140,17 @@ class URI {
      * Call before using any IO methods. 
      */
     static server: (dir?: string) => Promise<void>;
+
     static simulate: () => void;
     /**
      * A Global URI object that points to the current execution environment location.
      */
     static GLOBAL: URI;
+
+    /**
+     * Cache for resolved resources
+     */
+    static RC: Map<string, any>;
 
     /**
      * ONLY AVAILABLE ON SERVER
@@ -216,15 +231,17 @@ class URI {
             URL_old = new URI(URL_or_url_original),
             URL_new = new URI(URL_or_url_new);
 
+        console.log(URL_old)
+
         if (!(URL_old + "") || !(URL_new + "")) return null;
 
-        if (URL_new.path[0] != "/") {
+        if (URL_new.IS_RELATIVE) {
 
             let old = URL_old.path.split("/").slice(0, -1);
             let nw = URL_new.path.split("/");
 
             for (let i = 0; i < nw.length; i++) {
-                switch (nw[i]) {
+                switch (nw[i].replace(/\.\.+/g, "..")) {
                     case ".": old.splice(old.length - 1, 0);
                         break;
                     case "..":
@@ -234,6 +251,7 @@ class URI {
                         old.push(nw[i]);
                 }
             }
+
             URL_new.path = old.join("/").replace(/\/\//g, "/");
         }
         return URL_new;
@@ -283,59 +301,22 @@ class URI {
                 return URI.GLOBAL;
         }
 
-        /**
-         * URI protocol
-         */
         this.protocol = "";
-
-        /**
-         * Username string
-         */
         this.user = "";
-
-        /**
-         * Password string
-         */
         this.pwd = "";
-
-        /**
-         * URI hostname
-         */
         this.host = "";
-
-        /**
-         * URI network port number.
-         */
         this.port = 0;
-
-        /**
-         * URI resource path
-         */
         this.path = "";
-
-        /**
-         * URI query string.
-         */
         this.query = "";
-
-        /**
-         * Hashtag string
-         */
         this.hash = "";
-
-        /**
-         * Map of the query data
-         */
         this.map = null;
-
-
         if (uri instanceof URI) {
             this.protocol = uri.protocol;
             this.user = uri.user;
             this.pwd = uri.pwd;
             this.host = uri.host;
             this.port = uri.port;
-            this.path = uri.path.replace(/\/\//g, "/");
+            this.path = toPosixPath(uri.path.replace(double_forward_regex, "/"))
             this.query = uri.query;
             this.hash = uri.hash;
         } else if (IS_STRING) {
@@ -350,7 +331,7 @@ class URI {
             this.pwd = part[3] || "";
             this.host = part[4] || part[5] || part[6] || ((USE_LOCATION) ? location.hostname : "");
             this.port = parseInt(part[7]) || ((USE_LOCATION) ? parseInt(location.port) : 0);
-            this.path = (part[8] || ((USE_LOCATION) ? location.pathname : "")).replace(/\/\//g, "/");
+            this.path = toPosixPath((part[8] || ((USE_LOCATION) ? location.pathname : "")).replace(double_forward_regex, "/"));
             this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
             this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
 
@@ -358,7 +339,7 @@ class URI {
             this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
             this.port = parseInt(location.port);
-            this.path = location.pathname.replace(/\/\//g, "/");
+            this.path = toPosixPath(location.pathname.replace(double_forward_regex, "/"));
             this.hash = location.hash.slice(1);
             this.query = location.search.slice(1);
             this._getQuery_();
@@ -418,8 +399,14 @@ class URI {
         if (this.port)
             str.push(`:${this.port}`);
 
-        if (this.path)
-            str.push(`${this.path[0] == "/" || this.path[0] == "." ? "" : "/"}${this.path}`.replace(/\/\//g, "/"));
+        if (this.path){
+            const path = `${this.IS_RELATIVE || this.IS_ROOT ? "" : "/"}${this.path}`.replace(/\/\//g, "/");
+
+            if(isPOSIX)
+                str.push(toPosixPath(path));
+            else 
+                str.push(toWindowsPath(path));
+        }
 
         if (this.query)
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
@@ -600,8 +587,21 @@ class URI {
      * @readonly
      */
     get IS_RELATIVE(): boolean {
-        return this.path.slice(0, 3) == "../"
-            || this.path.slice(0, 2) == "./";
+        
+        return relative_regex.test(this.path)
+    }
+
+    /**
+     * True if the path segment begins with root patterns
+     * 
+     * examples
+     * 
+     * - Windows Drive : `C:...` `c:...` `a:...`
+     * - UNC Path : `\\...`
+     * - Posix Root:` /...`
+     */
+    get IS_ROOT () :boolean{
+        return !!root_reg.test(this.path);
     }
 
     static getEXEURL(imp: ImportMeta): URI {
@@ -764,10 +764,10 @@ URI.server = (
                         URL_old = new URI(old_url),
                         URL_new = new URI(new_url);
 
-                    if (!URL_new.IS_RELATIVE && (URL_new.path + "")[0] != "/") {
+                    if (!URL_new.IS_RELATIVE && !URL_new.IS_ROOT) {
 
                         //Attempt to resolve the file from the node_modules directories.
-
+                    
                         /**
                          * This uses the classical node_modules lookup.
                          * 
@@ -883,9 +883,9 @@ function createResponse(body: string | Buffer, url: string): Response {
 
         formData: () => null,
 
-        text: async () => body instanceof Buffer ? body.toString("utf8") : b,
+        text: async () => body instanceof Buffer ? body.toString("utf8") : body,
 
-        json: async () => JSON.parse(body instanceof Buffer ? body.toString("utf8") : b),
+        json: async () => JSON.parse(body instanceof Buffer ? body.toString("utf8") : body),
 
         arrayBuffer: async () => body instanceof Buffer ? body.buffer : Buffer.from(body),
 

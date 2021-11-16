@@ -33,6 +33,7 @@
     },
     "homepage": "https://github.com/CandleLibrary/uri#readme",
     "devDependencies": {
-        "@candlelib/cure": "0.5.0"
+        "@candlelib/cure": "^0.6.1",
+        "@types/node": "16.11.7"
     }
 }

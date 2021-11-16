@@ -1,9 +1,13 @@
-import URL from "@candlelib/uri";
+import URL from "../build/library/uri.js";
+
+function assert(val){
+    if(!val)
+        throw new Error("Invalid")
+}
 
 await URL.server();
 
-assert(URL.resolveRelative("./test", "/test/") + "" == "/test/test");
-assert(URL.resolveRelative("./test/", "/test/") + "" == "/test/test/");
+assert(URL.resolveRelative("./test", "/test/") + "" == "/test/test");assert(URL.resolveRelative("./test/", "/test/") + "" == "/test/test/");
 assert(URL.resolveRelative("../testA/", "/testB/") + "" == "/testA/");
 assert(URL.resolveRelative("../testA/", "/testB/test/") + "" == "/testB/testA/");
 assert(URL.resolveRelative("./testA/", "/testB/test") + "" == "/testB/testA/");
